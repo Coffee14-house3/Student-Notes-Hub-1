@@ -1,0 +1,597 @@
+import React, { useState, useEffect, useRef } from "react";
+import { ReadingSettings, UserBookmark, NoteDocument, CourseAnnouncement } from "../types";
+import { TeacherPortal } from "../components/TeacherPortal";
+import { DocumentModalViewer } from "../components/DocumentModalViewer";
+import { AiAssistantModal } from "../components/AiAssistantModal";
+import { DocumentMergeModal } from "./DocumentMergeModal";
+import { DocumentRenameModal } from "./DocumentRenameModal";
+import { DocumentDetailsModal } from "./DocumentDetailsModal";
+import { MicroArchitectureModal } from "../components/MicroArchitectureModal";
+import { Layers, ArrowLeft, Eye, EyeOff, Server, GraduationCap, Cpu, Globe } from "lucide-react";
+import { apiFetch, getBackendUrl, isStaticHosting } from "../utils/apiClient";
+import {
+  getStoredDocumentsSync,
+  getStoredAnnouncementsSync,
+  loadDocumentsFromStorage,
+  saveDocumentsToStorage,
+  loadAnnouncementsFromStorage,
+  saveAnnouncementsToStorage,
+  syncDocumentsWithServer,
+  permanentlyDeleteDocumentFromStorage
+} from "../utils/documentStorage";
+
+interface Props {
+  isStandalone?: boolean;
+  onSwitchPortal?: (mode: "student" | "teacher") => void;
+}
+
+export const TeacherApp: React.FC<Props> = ({ isStandalone = true, onSwitchPortal }) => {
+  const [activeView, setActiveView] = useState<string>("dashboard");
+  const [isMicroArchOpen, setIsMicroArchOpen] = useState<boolean>(false);
+  const isInitializedRef = useRef<boolean>(false);
+
+  // Documents state initialized with cached local data for instant 0ms reload
+  const [documents, setDocuments] = useState<NoteDocument[]>(() => {
+    return getStoredDocumentsSync();
+  });
+
+  // Announcements state initialized with cached local data
+  const [announcements, setAnnouncements] = useState<CourseAnnouncement[]>(() => {
+    return getStoredAnnouncementsSync();
+  });
+
+  // Automatically save documents whenever state updates
+  useEffect(() => {
+    if (isInitializedRef.current) {
+      saveDocumentsToStorage(documents);
+    }
+  }, [documents]);
+
+  // Automatically save announcements whenever state updates
+  useEffect(() => {
+    if (isInitializedRef.current) {
+      saveAnnouncementsToStorage(announcements);
+    }
+  }, [announcements]);
+
+  // Bi-directional document loading & server synchronization on mount
+  useEffect(() => {
+    let isMounted = true;
+    const loadAndSync = async () => {
+      // 1. Asynchronously load complete docs from IndexedDB (including large PDFs and slides)
+      const local = await loadDocumentsFromStorage();
+      if (isMounted && local.length > 0) {
+        setDocuments(local);
+      }
+
+      // 2. Fetch server documents and perform smart bi-directional sync
+      try {
+        const res = await apiFetch("/api/documents?role=all");
+        if (res.ok) {
+          const data = await res.json();
+          const serverDocs = Array.isArray(data.documents) ? data.documents : [];
+          const merged = await syncDocumentsWithServer(serverDocs, "teacher");
+          if (isMounted) {
+            setDocuments(merged);
+          }
+        }
+      } catch (err) {
+        console.warn("[TeacherApp] Network notice during document fetch:", err);
+      } finally {
+        isInitializedRef.current = true;
+      }
+    };
+
+    loadAndSync();
+    return () => { isMounted = false; };
+  }, []);
+
+  // Fetch announcements on mount with local storage fallback
+  useEffect(() => {
+    let isMounted = true;
+    const loadAnns = async () => {
+      const local = await loadAnnouncementsFromStorage();
+      if (isMounted && local.length > 0) {
+        setAnnouncements(local);
+      }
+      try {
+        const res = await apiFetch("/api/announcements");
+        if (res.ok) {
+          const data = await res.json();
+          if (Array.isArray(data.announcements) && data.announcements.length > 0) {
+            if (isMounted) setAnnouncements(data.announcements);
+            saveAnnouncementsToStorage(data.announcements);
+          }
+        }
+      } catch {
+        // ignore
+      }
+    };
+    loadAnns();
+    return () => { isMounted = false; };
+  }, []);
+
+  // Reading settings & bookmarks for previewing docs
+  const [readingSettings, setReadingSettings] = useState<ReadingSettings>({
+    fontSize: "medium",
+    lineSpacing: "normal",
+    fontFamily: "sans",
+    focusMode: false,
+    readingGoalMinutes: 15,
+    highContrastMode: false,
+    darkMode: true
+  });
+
+  const [bookmarks, setBookmarks] = useState<UserBookmark[]>([]);
+  const [isAiChatOpen, setIsAiChatOpen] = useState<boolean>(false);
+  const [isUploading, setIsUploading] = useState<boolean>(false);
+  const [uploadError, setUploadError] = useState<string | null>(null);
+
+  // File Upload Handler with Auto-Scaling & Stream support for large files
+  const handleUploadDocument = async (
+    file: File, 
+    metadata?: { 
+      title?: string; 
+      subject?: string; 
+      unit?: string; 
+      unitNumber?: number; 
+      unitTitle?: string; 
+      courseCode?: string; 
+      uploadedBy?: string; 
+      isPublished?: boolean 
+    }
+  ) => {
+    setIsUploading(true);
+    setUploadError(null);
+    let newDoc: NoteDocument;
+
+    try {
+      // For large files (> 15MB), stream binary directly to prevent browser base64 heap freeze
+      if (file.size > 15 * 1024 * 1024) {
+        const queryParams = new URLSearchParams({
+          fileName: file.name,
+          fileType: file.type || "application/octet-stream",
+          title: metadata?.title || file.name,
+          subject: metadata?.subject || "General Studies",
+          unit: metadata?.unit || "Unit 1",
+          unitNumber: String(metadata?.unitNumber || 1),
+          unitTitle: metadata?.unitTitle || "",
+          courseCode: metadata?.courseCode || "MCA-204",
+          uploadedBy: metadata?.uploadedBy || "Instructor",
+          isPublished: String(metadata?.isPublished !== false)
+        });
+
+        const res = await apiFetch(`/api/upload-stream?${queryParams.toString()}`, {
+          method: "POST",
+          body: file
+        });
+
+        if (!res.ok) {
+          const errData = await res.json().catch(() => ({}));
+          throw new Error(errData.error || "Failed to stream upload document file");
+        }
+
+        const data = await res.json();
+        newDoc = data.document || data;
+      } else {
+        // Read file as base64 data URL
+        const fileContent: string = await new Promise((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = () => resolve(reader.result as string);
+          reader.onerror = (err) => reject(err);
+          reader.readAsDataURL(file);
+        });
+
+        const payload = {
+          fileName: file.name,
+          fileType: file.type || undefined,
+          fileContent,
+          title: metadata?.title || file.name,
+          subject: metadata?.subject,
+          unit: metadata?.unit,
+          unitNumber: metadata?.unitNumber,
+          unitTitle: metadata?.unitTitle,
+          courseCode: metadata?.courseCode,
+          uploadedBy: metadata?.uploadedBy,
+          isPublished: metadata?.isPublished
+        };
+
+        const res = await apiFetch("/api/parse-document", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify(payload)
+        });
+
+        if (!res.ok) {
+          const errData = await res.json().catch(() => ({}));
+          throw new Error(errData.error || "Failed to process document file");
+        }
+
+        const data = await res.json();
+        newDoc = data.document || data;
+      }
+
+      setDocuments(prev => [newDoc, ...prev]);
+    } catch (err: any) {
+      const msg = err?.message || "Failed to upload and process file";
+      setUploadError(msg);
+      throw err;
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
+  // Dedicated Google Link Importer (Docs, Drive PDF, Slides, Sheets)
+  const handleImportGoogleLink = async (payload: {
+    url: string;
+    title?: string;
+    subject?: string;
+    unit?: string;
+    unitTitle?: string;
+    courseCode?: string;
+    uploadedBy?: string;
+    notesSummary?: string;
+  }) => {
+    setIsUploading(true);
+    setUploadError(null);
+    try {
+      const res = await apiFetch("/api/parse-google-link", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload)
+      });
+      if (!res.ok) {
+        const errData = await res.json().catch(() => ({}));
+        throw new Error(errData.error || "Failed to parse Google Link");
+      }
+      const data = await res.json();
+      if (data.document) {
+        setDocuments(prev => [data.document, ...prev.filter(d => d.id !== data.document.id)]);
+      }
+      return data;
+    } catch (err: any) {
+      const msg = err?.message || "Failed to import Google Link";
+      setUploadError(msg);
+      throw err;
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
+  // Rename / Edit Metadata Handler
+  const handleRenameDocument = async (
+    docId: string, 
+    newTitle: string, 
+    subject?: string, 
+    description?: string,
+    unit?: string,
+    unitTitle?: string,
+    courseCode?: string
+  ) => {
+    try {
+      await apiFetch(`/api/documents/${docId}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          title: newTitle,
+          subject,
+          description,
+          unit,
+          unitTitle,
+          courseCode
+        })
+      });
+    } catch {
+      // ignore
+    }
+
+    setDocuments(prev =>
+      prev.map(d => {
+        if (d.id === docId) {
+          return {
+            ...d,
+            title: newTitle,
+            shortTitle: newTitle.length > 25 ? newTitle.slice(0, 22) + "..." : newTitle,
+            subject: (subject && subject.trim()) ? subject.trim() : (d.subject || "General Studies"),
+            description: description !== undefined ? description : d.description,
+            unit: (unit && unit.trim()) ? unit.trim() : (d.unit || "Unit 1"),
+            unitTitle: unitTitle !== undefined ? unitTitle : d.unitTitle,
+            courseCode: courseCode !== undefined ? courseCode : d.courseCode
+          };
+        }
+        return d;
+      })
+    );
+  };
+
+  // Duplicate Document
+  const handleDuplicateDocument = (docId: string) => {
+    const found = documents.find(d => d.id === docId);
+    if (!found) return;
+    const duplicated: NoteDocument = {
+      ...found,
+      id: `doc-${Date.now()}`,
+      title: `${found.title} (Copy)`,
+      shortTitle: `${found.shortTitle} (Copy)`,
+      uploadedAt: "Just now"
+    };
+    setDocuments(prev => [duplicated, ...prev]);
+    fetch("/api/documents", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(duplicated)
+    }).catch(err => console.warn("[TeacherApp] Failed to save duplicate to server:", err));
+  };
+
+  // Merge Documents
+  const handleMergeDocuments = (mergedTitle: string, docIdsToMerge: string[]) => {
+    const selected = documents.filter(d => docIdsToMerge.includes(d.id));
+    if (selected.length < 2) return;
+
+    let mergedSections: any[] = [];
+    let pageCounter = 1;
+    selected.forEach(doc => {
+      doc.sections.forEach(sec => {
+        mergedSections.push({
+          ...sec,
+          id: `merged-sec-${Date.now()}-${pageCounter}`,
+          pageNumber: pageCounter++
+        });
+      });
+    });
+
+    const mergedDoc: NoteDocument = {
+      id: `merged-${Date.now()}`,
+      title: mergedTitle,
+      shortTitle: mergedTitle.length > 24 ? mergedTitle.slice(0, 22) + "..." : mergedTitle,
+      description: `Comprehensive master study guide combined from ${selected.length} materials.`,
+      pageCount: mergedSections.length,
+      sections: mergedSections,
+      subject: selected[0]?.subject || "Comprehensive Master Notes",
+      uploadedBy: "Teacher & Instructor Studio",
+      uploadedAt: "Just now",
+      isPublished: true,
+      tags: ["Master Guide", "Merged", "Comprehensive"]
+    };
+
+    setDocuments(prev => [mergedDoc, ...prev]);
+    apiFetch("/api/documents", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(mergedDoc)
+    }).catch(err => console.warn("[TeacherApp] Failed to save merged doc to server:", err));
+  };
+
+  // Delete Document Permanently from storage and ChromaDB
+  const handleDeleteDocument = async (docId: string) => {
+    // 1. Immediately purge from local client storage (IndexedDB & localStorage tombstone)
+    await permanentlyDeleteDocumentFromStorage(docId);
+
+    // 2. Optimistically update local React state
+    const updated = documents.filter(d => d.id !== docId);
+    setDocuments(updated);
+    if (activeView === docId) setActiveView("dashboard");
+
+    // 3. Call server DELETE endpoint to delete files from disk and purge vectors from ChromaDB
+    try {
+      const res = await apiFetch(`/api/documents/${docId}`, { method: "DELETE" });
+      if (res.ok) {
+        console.log(`[TeacherApp] Document ${docId} permanently deleted from disk and removed from ChromaDB.`);
+      }
+    } catch (err) {
+      console.warn("[TeacherApp] Network error during document delete:", err);
+    }
+
+    // 4. Authoritatively sync with server
+    try {
+      await apiFetch("/api/documents/sync", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ documents: updated, overwrite: true })
+      });
+    } catch {
+      // ignore
+    }
+  };
+
+  // Clear All Documents Permanently
+  const handleClearAllDocuments = async () => {
+    for (const d of documents) {
+      await permanentlyDeleteDocumentFromStorage(d.id);
+    }
+    setDocuments([]);
+    setActiveView("dashboard");
+    try {
+      await apiFetch("/api/documents/clear-all", { method: "POST" });
+    } catch {
+      // ignore
+    }
+  };
+
+  // Toggle Publish
+  const handleTogglePublishDocument = async (docId: string) => {
+    const doc = documents.find(d => d.id === docId);
+    const newStatus = doc?.isPublished === false ? true : false;
+    try {
+      await apiFetch(`/api/documents/${docId}/publish`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ isPublished: newStatus })
+      });
+    } catch {
+      // ignore
+    }
+    setDocuments(prev =>
+      prev.map(d => (d.id === docId ? { ...d, isPublished: newStatus } : d))
+    );
+  };
+
+  // Announcements Handlers
+  const handleCreateAnnouncement = async (ann: Omit<CourseAnnouncement, "id" | "date">) => {
+    const newAnn: CourseAnnouncement = {
+      ...ann,
+      id: `ann-${Date.now()}`,
+      date: new Date().toLocaleDateString("en-US", { month: "short", day: "numeric" })
+    };
+    try {
+      await apiFetch("/api/announcements", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(newAnn)
+      });
+    } catch {
+      // ignore
+    }
+    setAnnouncements(prev => [newAnn, ...prev]);
+  };
+
+  const handleDeleteAnnouncement = async (annId: string) => {
+    try {
+      await apiFetch(`/api/announcements/${annId}`, { method: "DELETE" });
+    } catch {
+      // ignore
+    }
+    setAnnouncements(prev => prev.filter(a => a.id !== annId));
+  };
+
+  const currentDocument = documents.find(d => d.id === activeView);
+
+  return (
+    <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col antialiased selection:bg-purple-500/30 selection:text-purple-200">
+      
+      {/* Top Teacher Studio Navigation Bar */}
+      <nav className="sticky top-0 z-40 bg-slate-950/90 backdrop-blur-md border-b border-purple-900/30 px-3 sm:px-5 py-2.5 flex items-center justify-between gap-3 text-xs flex-wrap">
+        
+        {/* Left: Brand Identity */}
+        <div className="flex items-center gap-2.5">
+          <div className="p-1.5 bg-gradient-to-r from-purple-600 to-indigo-600 text-white font-bold rounded-xl shadow-sm">
+            <Layers className="w-4 h-4" />
+          </div>
+          <div>
+            <div className="flex items-center gap-2">
+              <span className="font-extrabold text-sm text-white tracking-tight">Teacher & Instructor Studio</span>
+              <span className="px-2 py-0.5 rounded-full bg-purple-500/20 text-purple-300 border border-purple-500/30 text-[10px] font-bold">
+                MCA-204
+              </span>
+            </div>
+          </div>
+        </div>
+
+        {/* Right: Actions */}
+        <div className="flex items-center gap-2 flex-wrap">
+
+          {/* Switch to Student Portal */}
+          <button
+            type="button"
+            onClick={() => {
+              try {
+                const url = new URL(window.location.href);
+                url.searchParams.set("portal", "student");
+                window.history.pushState({}, "", url.toString());
+              } catch {
+                // ignore
+              }
+              if (onSwitchPortal) {
+                onSwitchPortal("student");
+              } else {
+                window.location.href = "./?portal=student";
+              }
+            }}
+            className="px-3 py-1.5 rounded-xl bg-amber-500/15 hover:bg-amber-500/25 text-amber-300 border border-amber-500/30 text-xs font-bold flex items-center gap-1.5 cursor-pointer transition-all shadow-sm"
+            title="Preview verified student reader for 60 students"
+          >
+            <GraduationCap className="w-3.5 h-3.5 text-amber-400" />
+            <span>{isStandalone ? "Preview Student View" : "Student Portal (60 Students)"}</span>
+          </button>
+
+          {activeView !== "dashboard" && (
+            <button
+              onClick={() => setActiveView("dashboard")}
+              className="px-3 py-1.5 bg-slate-900 hover:bg-slate-800 text-slate-200 border border-slate-700 rounded-lg text-xs font-semibold flex items-center gap-1.5 cursor-pointer transition-colors"
+            >
+              <ArrowLeft className="w-3.5 h-3.5" />
+              <span>Back to Studio Dashboard</span>
+            </button>
+          )}
+        </div>
+      </nav>
+
+      {/* Main Studio Area */}
+      <main className="flex-1">
+        {activeView === "dashboard" ? (
+          <TeacherPortal
+            documents={documents}
+            announcements={announcements}
+            onUploadDocument={handleUploadDocument}
+            onImportGoogleLink={handleImportGoogleLink}
+            onAddDocument={(newDoc) => setDocuments(prev => [newDoc, ...prev.filter(d => d.id !== newDoc.id)])}
+            onLoadSampleDocument={() => {}}
+            onSelectDocument={(docId) => setActiveView(docId)}
+            onRenameDocument={handleRenameDocument}
+            onDuplicateDocument={handleDuplicateDocument}
+            onMergeDocuments={handleMergeDocuments}
+            onDeleteDocument={handleDeleteDocument}
+            onRemoveUpdatedNotes={handleClearAllDocuments}
+            onTogglePublishDocument={handleTogglePublishDocument}
+            onCreateAnnouncement={handleCreateAnnouncement}
+            onDeleteAnnouncement={handleDeleteAnnouncement}
+            isUploading={isUploading}
+            uploadError={uploadError}
+            onSwitchToStudent={() => {
+              if (onSwitchPortal) {
+                onSwitchPortal("student");
+              } else {
+                const url = new URL(window.location.href);
+                url.searchParams.set("portal", "student");
+                window.location.href = url.toString();
+              }
+            }}
+          />
+        ) : (
+          <DocumentModalViewer
+            isOpen={true}
+            onClose={() => setActiveView("dashboard")}
+            document={currentDocument}
+            notes={documents}
+            allDocuments={documents}
+            activeView={activeView}
+            setActiveView={(docId) => setActiveView(docId)}
+            onSelectDocument={(docId) => setActiveView(docId)}
+            onDeleteDocument={handleDeleteDocument}
+            readingSettings={readingSettings}
+            onUpdateSettings={setReadingSettings}
+            bookmarks={bookmarks}
+            onToggleBookmark={() => {}}
+            isAiChatOpen={isAiChatOpen}
+            onOpenAiChat={() => setIsAiChatOpen(true)}
+            onCloseAiChat={() => setIsAiChatOpen(false)}
+            onToggleAiChat={() => setIsAiChatOpen(prev => !prev)}
+            onOpenQuiz={() => {}}
+            onOpenExport={() => {}}
+          />
+        )}
+      </main>
+
+      {/* Micro-Architecture Modal for GitHub Pages & Render */}
+      <MicroArchitectureModal
+        isOpen={isMicroArchOpen}
+        onClose={() => setIsMicroArchOpen(false)}
+        onBackendUrlChanged={() => {
+          apiFetch("/api/documents?role=all")
+            .then(res => res.json())
+            .then(data => {
+              if (Array.isArray(data.documents)) {
+                setDocuments(data.documents);
+              }
+            })
+            .catch(() => {});
+        }}
+      />
+
+    </div>
+  );
+};
+
+export default TeacherApp;

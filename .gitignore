@@ -1,0 +1,23 @@
+node_modules/
+build/
+dist/
+dist-student/
+dist-teacher/
+coverage/
+.DS_Store
+*.log
+.env*
+!.env.example
+.aistudio/
+public/assets/
+*.pdf
+.github/
+bun.lock
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.pytest_cache/
+.cache/
