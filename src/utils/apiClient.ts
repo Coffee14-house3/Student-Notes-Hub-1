@@ -67,7 +67,7 @@ export function getBackendUrl(): string {
 
   // 3. Automated Discovery: on static hosting (GitHub Pages), route to Render backend service
   if (isStaticHosting()) {
-    return "https://aws-cloud-notes-reader.onrender.com";
+    return "https://student-notes-hub-2.onrender.com";
   }
 
   // 4. Local dev / same-origin fallback
