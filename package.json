@@ -7,6 +7,7 @@
     "dev": "tsx server.ts",
     "generate:docs": "node scripts/generate_pdf.js",
     "build": "(node scripts/generate_pdf.js || true) && vite build && esbuild server.ts --bundle --platform=node --format=cjs --packages=external --sourcemap --outfile=dist/server.cjs",
+    "build:gh-pages": "vite build && cp dist/index.html dist/404.html",
     "build:student": "VITE_PORTAL_MODE=student vite build --outDir dist-student",
     "build:teacher": "VITE_PORTAL_MODE=teacher vite build --outDir dist-teacher",
     "build:dual": "npm run build:student && npm run build:teacher",

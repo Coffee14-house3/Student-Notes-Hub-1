@@ -279,23 +279,19 @@ export const StudentApp: React.FC<Props> = ({ isStandalone = true, onSwitchPorta
             type="button"
             onClick={() => {
               try {
-                const url = new URL(window.location.href);
-                url.searchParams.set("portal", "teacher");
-                window.history.pushState({}, "", url.toString());
+                window.location.hash = "/faculty";
               } catch {
                 // ignore
               }
               if (onSwitchPortal) {
                 onSwitchPortal("teacher");
-              } else {
-                window.location.href = "./?portal=teacher";
               }
             }}
             className="px-3 py-1.5 rounded-xl bg-purple-500/15 hover:bg-purple-500/25 text-purple-300 border border-purple-500/30 text-xs font-bold flex items-center gap-1.5 cursor-pointer transition-all shadow-sm"
-            title="Switch to Instructor Upload Studio"
+            title="Switch to Faculty / Teacher Studio (#/faculty)"
           >
             <Layers className="w-3.5 h-3.5 text-purple-400" />
-            <span>Teacher Studio</span>
+            <span>Faculty Studio</span>
           </button>
 
           {/* Connect / Verify Shared Backend */}

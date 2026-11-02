@@ -29,11 +29,17 @@ export function onBackendUrlChange(callback: (url: string) => void): () => void 
 }
 
 export function getBackendUrl(): string {
-  // Determine if active portal context is teacher
+  const hash = typeof window !== "undefined" ? window.location.hash.toLowerCase() : "";
+  // Determine if active portal context is faculty / teacher
   const isTeacherPortal = typeof window !== "undefined" && (
     (import.meta as any).env?.VITE_PORTAL_MODE === "teacher" ||
+    (import.meta as any).env?.VITE_PORTAL_MODE === "faculty" ||
+    hash.includes("faculty") ||
+    hash.includes("teacher") ||
     window.location.search.includes("portal=teacher") ||
-    window.location.pathname.includes("/teacher")
+    window.location.search.includes("portal=faculty") ||
+    window.location.pathname.includes("/teacher") ||
+    window.location.pathname.includes("/faculty")
   );
 
   // 1. Build-time environment variable (Injected by GitHub Actions / Option B)
@@ -59,11 +65,9 @@ export function getBackendUrl(): string {
     }
   } catch {}
 
-  // 3. Automated Discovery: on static hosting (GitHub Pages), route to respective Render backend
+  // 3. Automated Discovery: on static hosting (GitHub Pages), route to Render backend service
   if (isStaticHosting()) {
-    return isTeacherPortal
-      ? "https://mca204-teacher-api.onrender.com"
-      : "https://mca204-student-api.onrender.com";
+    return "https://aws-cloud-notes-reader.onrender.com";
   }
 
   // 4. Local dev / same-origin fallback

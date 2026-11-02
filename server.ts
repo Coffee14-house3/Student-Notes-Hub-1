@@ -3344,6 +3344,20 @@ const topicCatalog: Array<{ id: string; title: string; matchFn: (str: string) =>
         "**Health Checks:** Performs continuous HTTP/TCP health checks on registered instances and automatically reroutes traffic away from unhealthy nodes.",
         "**High Availability:** Eliminates single points of failure and integrates natively with Auto Scaling Groups (ASG) and SSL/TLS termination."
       ]
+    },
+    {
+      id: "aws_migration_services",
+      title: "AWS Migration Services (Copying Old/On-Premises Infrastructure to AWS)",
+      matchFn: (s) =>
+        (s.includes("migration") || s.includes("migrate") || s.includes("copy") || s.includes("moving")) &&
+        (s.includes("infrastructure") || s.includes("old") || s.includes("on-premise") || s.includes("on-premises") || s.includes("aws services") || s.includes("four different") || s.includes("4 different") || s.includes("mgn") || s.includes("dms") || s.includes("datasync") || s.includes("snowball")),
+      simpleDefinition: "AWS provides specialized migration tools to copy your old data center servers, databases, files, and physical drives into the cloud with minimal downtime.",
+      points: [
+        "**AWS Application Migration Service (AWS MGN / SMS):** Automatically replicates physical, virtual (VMware/Hyper-V), or cloud server disks at the block level into Amazon EC2 with near-zero downtime.",
+        "**AWS Database Migration Service (AWS DMS):** Migrates operational databases (Oracle, SQL Server, MySQL, Postgres) to AWS while keeping the source database completely online via continuous Change Data Capture (CDC).",
+        "**AWS DataSync:** High-speed automated data transfer service that accelerates copying file systems and object storage (NAS, SAN, NFS, SMB) to Amazon S3, EFS, and FSx up to 10x faster than open-source tools.",
+        "**AWS Snowball Family (Snowcone, Snowball Edge, Snowmobile):** Secure, rugged physical hardware appliances shipped to your facility to copy terabytes to petabytes/exabytes of offline data to AWS without saturating internet bandwidth."
+      ]
     }
   ];
 
@@ -3487,6 +3501,100 @@ A **Subnet (Subnetwork)** is a logical segmentation of an IP network (CIDR block
 
     if (singleTopic.id === "types_of_cloud") {
       return `### 🟡 Exam Answer (6 Marks Weightage — Structured 2-Page A4 Format)\n\n**Question Topic:** Types of Cloud Deployment & Service Models in AWS\n\n---\n\n### 1. 📌 Overview & Definition\nTypes of Cloud are categorized into **Cloud Deployment Models** (Public, Private, Hybrid, Community) and **Cloud Service Models** (IaaS, PaaS, SaaS).\n\n---\n\n### 2. 🌐 AWS Cloud Deployment Models\n1. **Public Cloud:** Multi-tenant infrastructure shared over the public internet (Amazon EC2, S3).\n2. **Private Cloud:** Dedicated single-tenant infrastructure (AWS Outposts, Dedicated Hosts).\n3. **Hybrid Cloud:** Connected infrastructure bridging on-premises data centers with AWS (AWS Direct Connect).\n4. **Community Cloud:** Infrastructure shared across organizations with common mandates (AWS GovCloud).\n\n---\n\n### 3. 🛠️ Cloud Service Models (SPI Framework)\n1. **IaaS:** Raw compute and network building blocks (Amazon EC2, VPC).\n2. **PaaS:** Managed execution runtime and environment (AWS Elastic Beanstalk, RDS).\n3. **SaaS:** Complete turnkey web software applications (Amazon QuickSight).`;
+    }
+
+    if (singleTopic.id === "aws_migration_services") {
+      return `### 🟡 Exam Answer (10 Marks Weightage — Comprehensive Architecture & Strategy Format)
+
+**Question Topic:** Discuss Four Different AWS Services to Copy Old (On-Premises) Infrastructure to AWS
+
+---
+
+### 1. 📌 Overview & Core Cloud Migration Strategy
+Migrating legacy, on-premises infrastructure to AWS involves transitioning physical compute, databases, local file shares, and mass storage into scalable cloud equivalents. AWS structures migration under the **6 R's Migration Framework** (Rehost, Replatform, Repurchase, Refactor, Retire, Retain). To execute the "Rehost (Lift-and-Shift)" and "Replatform" strategies with minimal business disruption, AWS provides four primary automated data and server replication services:
+1. **AWS Application Migration Service (AWS MGN)** – For physical, virtual, or cloud server block-level replication.
+2. **AWS Database Migration Service (AWS DMS)** – For continuous, zero-downtime relational and NoSQL database migration.
+3. **AWS DataSync** – For high-speed, automated file and object storage transfers over network connections.
+4. **AWS Snowball Family (Snowball Edge, Snowcone, Snowmobile)** – For offline physical hardware transport of massive petabyte-scale data.
+
+---
+
+### 2. ⚙️ Deep Dive: The Four Key AWS Migration Services
+
+#### 1️⃣ AWS Application Migration Service (AWS MGN) [Formerly Server Migration Service (SMS)]
+- **Core Function:** Primary service for lifting and shifting server workloads (physical hardware, VMware vSphere, Microsoft Hyper-V, or other clouds) directly into **Amazon EC2**.
+- **Working Mechanism:** Uses a lightweight AWS Replication Agent installed on the source servers. It performs non-disruptive, block-level background data replication directly into staging EBS volumes in an AWS staging area subnet.
+- **Continuous Replication & Cutover:** Keeps target EBS volumes continuously synchronized with source server changes. When ready, the administrator triggers a cutover test or final launch, which spins up native Amazon EC2 instances in minutes with virtually zero downtime.
+
+#### 2️⃣ AWS Database Migration Service (AWS DMS)
+- **Core Function:** Facilitates secure, rapid migration of operational databases, data warehouses, and streaming data to AWS databases (Amazon RDS, Amazon Aurora, Amazon DynamoDB, Redshift).
+- **Zero-Downtime Replication (CDC):** The source database remains completely operational throughout the migration process. DMS uses **Change Data Capture (CDC)** to stream live transaction log changes to the AWS target database continuously until final cutover.
+- **Homogeneous & Heterogeneous Support:** 
+  - *Homogeneous:* Migrates like-to-like engines (e.g., on-premises Oracle to Amazon RDS Oracle).
+  - *Heterogeneous:* Converts disparate database engines (e.g., on-premises Oracle to Amazon Aurora PostgreSQL) by combining AWS DMS with the **AWS Schema Conversion Tool (AWS SCT)** to automatically convert database schemas, stored procedures, and triggers.
+
+#### 3️⃣ AWS DataSync
+- **Core Function:** An automated, high-performance data transfer service that accelerates copying massive quantities of unstructured and structured files between on-premises storage and AWS storage services.
+- **High-Speed Network Protocol:** Uses a purpose-built, parallelized network protocol that transfers data up to **10 times faster** than standard open-source tools (like Rsync, SCP, or FTP) across AWS Direct Connect or the internet.
+- **Supported Storage Targets:** Connects on-premises Network-Attached Storage (NAS), SAN arrays, NFS file shares, and Windows SMB shares directly to **Amazon S3**, **Amazon EFS** (Elastic File System), and **Amazon FSx** (for Windows File Server / Lustre).
+- **Built-in Integrity & Security:** Performs automated end-to-end data encryption in-transit (TLS) and at-rest, scheduling, continuous bandwidth throttling, and automatic MD5 file checksum validation.
+
+#### 4️⃣ AWS Snowball Family (Snowcone, Snowball Edge, Snowmobile)
+- **Core Function:** A collection of secure, physical, ruggedized hardware appliances used to transfer massive datasets (terabytes to petabytes and exabytes) physically into AWS when network bandwidth is too slow, expensive, or unavailable.
+- **Hardware Portfolio:**
+  - **AWS Snowcone:** Ultra-portable, lightweight (4.5 lbs) 8 TB appliance for edge data collection.
+  - **AWS Snowball Edge:** Ruggedized appliance offering 80 TB or 210 TB of NVMe storage, equipped with onboard computing capabilities (EC2 instances and AWS Lambda at the edge) to preprocess data before shipping.
+  - **AWS Snowmobile:** A 45-foot rugged shipping container pulled by a semi-trailer truck capable of moving up to **100 Petabytes (PB)** per container for large-scale data center evacuations.
+- **Enterprise Security:** Shipped with tamper-evident seals, trusted platform module (TPM) hardware, and automated 256-bit AES cryptographic encryption keys managed by AWS KMS.
+
+---
+
+### 3. 📐 Architecture & Working Flow Diagram
+\`\`\`ascii
++---------------------------------------------------------------------------------------------------------+
+|                                    ON-PREMISES DATA CENTER (OLD INFRASTRUCTURE)                         |
+|                                                                                                         |
+|   +-----------------------+   +-----------------------+   +-----------------------+   +-------------+   |
+|   |  Physical/VM Servers  |   | Production Databases  |   | NAS / SAN File Shares |   | Bulk Multi- |   |
+|   |   (VMware / Hyper-V)  |   | (Oracle/SQL Server)   |   |     (NFS / SMB)       |   | Petabyte Data|   |
+|   +-----------+-----------+   +-----------+-----------+   +-----------+-----------+   +------+------+   |
++---------------|---------------------------|---------------------------|----------------------|----------+
+                |                           |                           |                      |
+                | AWS MGN Agent             | AWS DMS (CDC Engine)      | AWS DataSync Agent   | Physical Courier
+                v                           v                           v                      v
+        [ Block Replication ]       [ Live Transaction Log ]    [ 10x Parallel TLS ]    [ Secure Hardware ]
+                |                           |                           |               [ (Snowball Edge) ]
+                +---------------------------+---------------------------+                      |
+                                            | (Direct Connect / IPsec VPN)                     | (AWS Loading Bay)
+                                            v                                                  v
++---------------------------------------------------------------------------------------------------------+
+|                                           TARGET AWS CLOUD ENVIRONMENT                                  |
+|                                                                                                         |
+|   +-----------------------+   +-----------------------+   +-----------------------+   +-------------+   |
+|   |   Amazon EC2 & EBS    |   |  Amazon RDS / Aurora  |   |   Amazon S3 / EFS     |   |  Amazon S3  |   |
+|   |   (Compute Instances) |   |  (Managed Relational) |   | (Elastic File Shares) |   | (Data Lake) |   |
+|   +-----------------------+   +-----------------------+   +-----------------------+   +-------------+   |
++---------------------------------------------------------------------------------------------------------+
+\`\`\`
+
+---
+
+### 4. 📊 Technical Comparison: The 4 AWS Migration Services
+| Metric / Feature | AWS Application Migration (MGN) | AWS Database Migration (DMS) | AWS DataSync | AWS Snowball Family |
+| :--- | :--- | :--- | :--- | :--- |
+| **Primary Workload** | Operating Systems & Server Disks | Relational & NoSQL Databases | Files, Directories, Objects | Massive Unstructured Data |
+| **Target AWS Service** | Amazon EC2 & EBS Volumes | Amazon RDS, Aurora, DynamoDB | Amazon S3, EFS, FSx | Amazon S3 & Amazon EBS |
+| **Transfer Method** | Continuous block-level network stream | Change Data Capture (CDC) replication | High-speed parallel network protocol | Physical hardware shipment via courier |
+| **Downtime Impact** | Minimal cutover window (&lt; few minutes) | Near-zero downtime (live replication) | Zero downtime for active storage | Offline batch transfer (days for shipping) |
+| **Best Used For** | Rehosting legacy application servers | Heterogeneous & homogeneous DB moves | Daily file sync & NAS retirement | Petabyte-scale data center evacuation |
+
+---
+
+### 5. 💡 Exam & Key Takeaways (10-Mark Scoring Points)
+- **6 R's Framework:** Always cite Rehost, Replatform, Repurchase, Refactor, Retire, and Retain.
+- **Change Data Capture (CDC):** Key technical mechanism in AWS DMS enabling source databases to stay live during migration.
+- **Schema Conversion Tool (SCT):** Required companion tool to DMS for heterogeneous database transformations.
+- **Network vs. Physical Trade-off:** Use DataSync when robust Direct Connect/Internet bandwidth exists; use the Snowball family when dataset size exceeds network bandwidth throughput.`;
     }
 
     // Default single topic fallback using catalog points

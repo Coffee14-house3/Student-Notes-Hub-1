@@ -471,7 +471,7 @@ export const TeacherApp: React.FC<Props> = ({ isStandalone = true, onSwitchPorta
           </div>
           <div>
             <div className="flex items-center gap-2">
-              <span className="font-extrabold text-sm text-white tracking-tight">Teacher & Instructor Studio</span>
+              <span className="font-extrabold text-sm text-white tracking-tight">Faculty & Instructor Studio</span>
               <span className="px-2 py-0.5 rounded-full bg-purple-500/20 text-purple-300 border border-purple-500/30 text-[10px] font-bold">
                 MCA-204
               </span>
@@ -487,23 +487,19 @@ export const TeacherApp: React.FC<Props> = ({ isStandalone = true, onSwitchPorta
             type="button"
             onClick={() => {
               try {
-                const url = new URL(window.location.href);
-                url.searchParams.set("portal", "student");
-                window.history.pushState({}, "", url.toString());
+                window.location.hash = "/student";
               } catch {
                 // ignore
               }
               if (onSwitchPortal) {
                 onSwitchPortal("student");
-              } else {
-                window.location.href = "./?portal=student";
               }
             }}
             className="px-3 py-1.5 rounded-xl bg-amber-500/15 hover:bg-amber-500/25 text-amber-300 border border-amber-500/30 text-xs font-bold flex items-center gap-1.5 cursor-pointer transition-all shadow-sm"
-            title="Preview verified student reader for 60 students"
+            title="Open Student Portal (#/student)"
           >
             <GraduationCap className="w-3.5 h-3.5 text-amber-400" />
-            <span>{isStandalone ? "Preview Student View" : "Student Portal (60 Students)"}</span>
+            <span>Student Portal</span>
           </button>
 
           {activeView !== "dashboard" && (

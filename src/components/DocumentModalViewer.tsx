@@ -1137,21 +1137,6 @@ export const DocumentModalViewer: React.FC<Props> = ({
                   </div>
                 </div>
 
-                {/* Google Drive Permissions Notice Banner */}
-                <div className="bg-amber-950/40 border-b border-amber-500/20 px-4 py-2 flex flex-col sm:flex-row sm:items-center justify-between gap-1 text-[11px] text-amber-200">
-                  <div className="flex items-center gap-1.5">
-                    <span className="font-bold text-amber-400">💡 Google Access Notice:</span>
-                    <span>If the preview shows a blank box or sign-in block, ensure link sharing in Google Drive is set to <strong>"Anyone with the link can view"</strong>.</span>
-                  </div>
-                  <a
-                    href={activeDoc?.originalFileUrl || activeDoc?.downloadUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="underline text-amber-300 hover:text-white font-semibold shrink-0"
-                  >
-                    Open Directly ↗
-                  </a>
-                </div>
 
                 <div className="flex-1 w-full h-full bg-slate-900 relative">
                   {(() => {

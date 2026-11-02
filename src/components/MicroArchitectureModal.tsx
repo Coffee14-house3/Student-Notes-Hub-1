@@ -1202,14 +1202,25 @@ jobs:
                 <p className="text-slate-300 text-xs leading-relaxed">
                   You can give your students either the direct Student Portal URL or link it in your syllabus/Google Classroom:
                 </p>
-                <div className="p-3 rounded-xl bg-slate-950 border border-slate-800 font-mono text-indigo-300 text-xs flex items-center justify-between gap-2">
-                  <span className="truncate">https://&lt;your-username&gt;.github.io/&lt;repo-name&gt;/?portal=student</span>
-                  <button
-                    onClick={() => handleCopy("https://<your-username>.github.io/<repo-name>/?portal=student", "student_link")}
-                    className="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg text-[10px] font-bold shrink-0"
-                  >
-                    {copiedKey === "student_link" ? "Copied!" : "Copy Pattern"}
-                  </button>
+                <div className="space-y-2">
+                  <div className="p-3 rounded-xl bg-slate-950 border border-slate-800 font-mono text-indigo-300 text-xs flex items-center justify-between gap-2">
+                    <span className="truncate">🎓 Student: https://&lt;username&gt;.github.io/&lt;repo&gt;/#/student</span>
+                    <button
+                      onClick={() => handleCopy("https://<username>.github.io/<repo>/#/student", "student_link")}
+                      className="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg text-[10px] font-bold shrink-0"
+                    >
+                      {copiedKey === "student_link" ? "Copied!" : "Copy Student Link"}
+                    </button>
+                  </div>
+                  <div className="p-3 rounded-xl bg-slate-950 border border-slate-800 font-mono text-purple-300 text-xs flex items-center justify-between gap-2">
+                    <span className="truncate">👩‍🏫 Faculty: https://&lt;username&gt;.github.io/&lt;repo&gt;/#/faculty</span>
+                    <button
+                      onClick={() => handleCopy("https://<username>.github.io/<repo>/#/faculty", "faculty_link")}
+                      className="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg text-[10px] font-bold shrink-0"
+                    >
+                      {copiedKey === "faculty_link" ? "Copied!" : "Copy Faculty Link"}
+                    </button>
+                  </div>
                 </div>
               </div>
 
