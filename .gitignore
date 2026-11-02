@@ -11,7 +11,6 @@ coverage/
 .aistudio/
 public/assets/
 *.pdf
-.github/
 bun.lock
 
 # Python
