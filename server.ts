@@ -2094,7 +2094,7 @@ Output ONLY valid JSON in this format:
         ? extractedContent 
         : (notesSummary && notesSummary.trim())
         ? notesSummary.trim()
-        : `### 📌 ${finalTitle}\n\n- **Source Material:** [Open in ${detectedService}](${cleanUrl})\n- **Service:** ${detectedService}\n- **Access:** Shared by Instructor for 16 Class Students.\n\nStudents can view the full note in the live sandbox iframe viewer and ask questions in the side-by-side RAG AI chat.`;
+        : `### 📌 ${finalTitle}\n\n- **Source Material:** [Original Material](${cleanUrl})\n- **Format:** ${detectedService}\n- **Course Unit:** ${unit || "Unit 1"}\n\nInteractive course notes, slides, and study reference for ${finalTitle}.`;
 
       // Split into sections if text is long
       const sections = [];

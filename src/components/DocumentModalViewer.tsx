@@ -26,14 +26,37 @@ import { apiFetch, apiUrl } from "../utils/apiClient";
 
 function getDriveEmbedUrl(url?: string): string | undefined {
   if (!url) return undefined;
-  if (url.includes("/preview") || url.includes("/embed")) return url;
-  const fileMatch = url.match(/\/file\/d\/([a-zA-Z0-9_-]+)/);
+  const clean = url.trim();
+  if (clean.includes("/preview") || clean.includes("/embed")) return clean;
+  
+  // Google Drive File / PDF
+  const fileMatch = clean.match(/\/file\/d\/([a-zA-Z0-9_-]+)/);
   if (fileMatch) return `https://drive.google.com/file/d/${fileMatch[1]}/preview`;
-  const docMatch = url.match(/\/document\/d\/([a-zA-Z0-9_-]+)/);
+
+  // Google Docs
+  const docMatch = clean.match(/\/document\/d\/([a-zA-Z0-9_-]+)/);
   if (docMatch) return `https://docs.google.com/document/d/${docMatch[1]}/preview`;
-  const presMatch = url.match(/\/presentation\/d\/([a-zA-Z0-9_-]+)/);
+
+  // Google Slides
+  const presMatch = clean.match(/\/presentation\/d\/([a-zA-Z0-9_-]+)/);
   if (presMatch) return `https://docs.google.com/presentation/d/${presMatch[1]}/embed`;
-  return url;
+
+  // Google Spreadsheets
+  const sheetMatch = clean.match(/\/spreadsheets\/d\/([a-zA-Z0-9_-]+)/);
+  if (sheetMatch) return `https://docs.google.com/spreadsheets/d/${sheetMatch[1]}/preview`;
+
+  // Drive id parameter: drive.google.com/open?id=... or /uc?id=...
+  const idMatch = clean.match(/[?&]id=([a-zA-Z0-9_-]+)/);
+  if (idMatch && clean.includes("drive.google.com")) {
+    return `https://drive.google.com/file/d/${idMatch[1]}/preview`;
+  }
+
+  // Replace trailing /view or /edit with /preview
+  if (clean.includes("drive.google.com") || clean.includes("docs.google.com")) {
+    return clean.replace(/\/(view|edit)(\?.*)?$/, "/preview");
+  }
+
+  return clean;
 }
 
 interface Props {
@@ -495,12 +518,20 @@ export const DocumentModalViewer: React.FC<Props> = ({
 
   const [slideDeckTheme, setSlideDeckTheme] = useState<"dark" | "light">("dark");
 
+  const driveEmbedUrl = useMemo(() => {
+    return getDriveEmbedUrl(
+      activeDoc?.originalFileUrl ||
+      activeDoc?.downloadUrl ||
+      (activeDoc as any)?.embedUrl
+    );
+  }, [activeDoc]);
+
   const isGoogleDriveDoc = Boolean(
     activeDoc?.fileFormat === "google-drive" ||
     activeDoc?.id?.startsWith("glink-") ||
     activeDoc?.originalFileUrl?.includes("google.com") ||
     activeDoc?.downloadUrl?.includes("google.com") ||
-    Boolean(getDriveEmbedUrl(activeDoc?.originalFileUrl || activeDoc?.downloadUrl))
+    Boolean(driveEmbedUrl)
   );
 
   useEffect(() => {
@@ -874,13 +905,6 @@ export const DocumentModalViewer: React.FC<Props> = ({
           </div>
         </div>
 
-        {/* Center: Interactive Mode Indicator */}
-        {!(activeDoc?.pdfUrl || activeDoc?.pdfDataUrl) && (
-          <div className="hidden lg:flex items-center gap-2 text-xs text-amber-400 font-medium bg-amber-500/10 px-3 py-1 rounded-full border border-amber-500/20">
-            <Sparkles className="w-3.5 h-3.5 text-amber-400" />
-            <span>AI Interactive Visualizer Active</span>
-          </div>
-        )}
 
         {/* Right Tools: Ask AI & Close Button */}
         <div className="flex items-center gap-2 shrink-0">
@@ -1091,10 +1115,20 @@ export const DocumentModalViewer: React.FC<Props> = ({
         <main 
           ref={pageContainerRef}
           className={`flex-1 min-w-0 h-full ${
-            (viewMode === "pdf" || isPptxDoc) ? "overflow-hidden p-0" : "overflow-auto p-2 sm:p-8 flex justify-center items-start"
+            (viewMode === "pdf" || isPptxDoc || (isGoogleDriveDoc && Boolean(driveEmbedUrl))) ? "overflow-hidden p-0" : "overflow-auto p-2 sm:p-8 flex justify-center items-start"
           } bg-[#e5e7eb] dark:bg-[#1a1a1e] relative`}
         >
-          {viewMode === "drive-sandbox" ? (
+          {isGoogleDriveDoc && driveEmbedUrl ? (
+            <div className="w-full h-full flex flex-col bg-[#121214] relative overflow-hidden">
+              <iframe
+                src={driveEmbedUrl}
+                className="w-full h-full border-0"
+                title={activeDoc?.title || "Course Material"}
+                allow="autoplay; encrypted-media; fullscreen"
+                loading="eager"
+              />
+            </div>
+          ) : viewMode === "drive-sandbox" ? (
             <div className="w-full h-full flex flex-col md:flex-row bg-[#1e1e1e] overflow-hidden relative">
               {/* Left: Live Google Drive Note Viewer / Iframe Sandbox */}
               <div className="flex-1 flex flex-col bg-slate-950 border-r border-[#3c3c3c] overflow-hidden">
@@ -1252,7 +1286,7 @@ export const DocumentModalViewer: React.FC<Props> = ({
           )}
 
           {/* Floating Page Badge Overlay Bottom Left (Matching Screenshot) */}
-          {activeView !== "quiz" && viewMode !== "pdf" && (
+          {activeView !== "quiz" && viewMode !== "pdf" && !isGoogleDriveDoc && (
             <div className="fixed bottom-6 left-6 z-30 flex items-center gap-2 bg-white/95 dark:bg-[#202025]/95 backdrop-blur-md px-3.5 py-1.5 rounded-lg border border-slate-300 dark:border-[#383842] shadow-xl text-xs font-mono font-bold text-slate-800 dark:text-slate-100">
               <span className="px-2 py-0.5 rounded bg-slate-100 dark:bg-[#121215] border border-slate-300 dark:border-[#3a3a42] font-extrabold text-slate-900 dark:text-white">
                 {isPptxDoc ? `Slide ${currentPage}` : currentPage}
