@@ -82,8 +82,7 @@ export const StudentApp: React.FC<Props> = ({ isStandalone = true, onSwitchPorta
       // 1. Fetch from Render micro-backend (supports local, configured URL, or VITE_API_URL)
       try {
         const res = await apiFetch(`/api/documents?role=student&_t=${Date.now()}`, {
-          cache: "no-store",
-          headers: { "Cache-Control": "no-cache", "Pragma": "no-cache" }
+          cache: "no-store"
         });
         if (res.ok) {
           const data = await res.json();

@@ -139,10 +139,15 @@ async function parsePdfBuffer(pdfBuffer: Buffer): Promise<{ text: string; pageCo
 }
 
 let geminiClientInstance: GoogleGenAI | null = null;
+let lastCachedApiKey = "";
+let lastAiDiagnosticError: string | null = null;
+
 function getGeminiClient(): GoogleGenAI | null {
   const apiKey = (process.env.GEMINI_API_KEY || "").trim();
   if (!apiKey) return null;
-  if (!geminiClientInstance) {
+
+  if (!geminiClientInstance || lastCachedApiKey !== apiKey) {
+    lastCachedApiKey = apiKey;
     geminiClientInstance = new GoogleGenAI({
       apiKey,
       httpOptions: {
@@ -193,11 +198,14 @@ async function callGeminiChat(
   systemInstruction: string,
   userPromptWithContext: string
 ): Promise<{ text: string; modelUsed: string } | null> {
+  const rawKey = (process.env.GEMINI_API_KEY || "").trim();
+  if (!rawKey) return null;
+
   const ai = getGeminiClient();
   if (!ai) return null;
 
-  // Primary: gemini-3.8-flash, Secondary fallback: gemini-3.1-flash-lite
-  const candidateModels = ["gemini-3.8-flash", "gemini-3.1-flash-lite"];
+  // Multi-tier candidate list: start with active, ultra-fast flash models
+  const candidateModels = ["gemini-3.5-flash", "gemini-3.6-flash", "gemini-3.8-flash", "gemini-3.1-flash-lite"];
 
   for (const model of candidateModels) {
     try {
@@ -210,14 +218,20 @@ async function callGeminiChat(
             temperature: 0.2,
           },
         });
-      });
+      }, 1, 400);
 
       if (response?.text) {
+        lastAiDiagnosticError = null;
         return { text: response.text, modelUsed: model };
       }
     } catch (err: any) {
-      console.warn(`[Gemini API] Chat error with ${model}:`, err?.message || err);
-      // Fall through to next model candidate
+      const errMsg = err?.message || String(err);
+      console.warn(`[Gemini API] Chat error with ${model}:`, errMsg);
+      if (errMsg.includes("API_KEY_INVALID") || errMsg.includes("API key not valid") || errMsg.includes("400") || errMsg.includes("403")) {
+        lastAiDiagnosticError = `Google Gemini rejected GEMINI_API_KEY: "API key not valid". Please verify key in Render environment.`;
+      } else if (errMsg.includes("RESOURCE_EXHAUSTED") || errMsg.includes("quota")) {
+        lastAiDiagnosticError = `Google Gemini API quota reached: ${errMsg.slice(0, 160)}.`;
+      }
     }
   }
   return null;
@@ -230,7 +244,7 @@ async function callGeminiQuiz(
   const ai = getGeminiClient();
   if (!ai) return null;
 
-  const candidateModels = ["gemini-3.8-flash", "gemini-3.1-flash-lite"];
+  const candidateModels = ["gemini-3.5-flash", "gemini-3.6-flash", "gemini-3.8-flash", "gemini-3.1-flash-lite"];
 
   for (const model of candidateModels) {
     try {
@@ -390,11 +404,17 @@ async function startServer() {
   app.use(express.json({ limit: "1024mb" }));
   app.use(express.urlencoded({ limit: "1024mb", extended: true }));
 
-  // Enable CORS for all incoming requests (crucial for cross-domain student/teacher sync on Render)
+  // Enable CORS for all incoming requests (crucial for cross-domain student/teacher sync on Render & GitHub Pages)
   app.use((req, res, next) => {
     res.setHeader("Access-Control-Allow-Origin", "*");
-    res.setHeader("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
-    res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization, X-Requested-With");
+    res.setHeader("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS, PATCH");
+    const requestedHeaders = req.headers["access-control-request-headers"];
+    res.setHeader(
+      "Access-Control-Allow-Headers",
+      requestedHeaders || "Content-Type, Authorization, X-Requested-With, Cache-Control, cache-control, Pragma, Accept, Origin, Range, *"
+    );
+    res.setHeader("Access-Control-Expose-Headers", "*");
+    res.setHeader("Access-Control-Max-Age", "86400");
     if (req.method === "OPTIONS") {
       return res.sendStatus(204);
     }
@@ -1990,6 +2010,9 @@ Output ONLY valid JSON in this format:
   const healthCheckHandler = (req: any, res: any) => {
     res.setHeader("Cache-Control", "no-cache");
     const chromaConfig = getChromaConfig();
+    const rawGeminiKey = (process.env.GEMINI_API_KEY || "").trim();
+    const isGeminiFormatValid = rawGeminiKey.startsWith("AIzaSy") || rawGeminiKey.startsWith("AQ.");
+
     return res.json({
       status: "healthy",
       timestamp: Date.now(),
@@ -1997,6 +2020,13 @@ Output ONLY valid JSON in this format:
       architecture: "Render Microservice + Static GitHub Pages UI",
       documentsCount: serverDocuments.length,
       announcementsCount: serverAnnouncements.length,
+      ai: {
+        geminiConfigured: !!rawGeminiKey,
+        geminiFormatValid: isGeminiFormatValid,
+        geminiNotice: isGeminiFormatValid ? "Active Gemini API key configured" : (rawGeminiKey ? "Unrecognized key format" : "Not set"),
+        groqConfigured: !!(process.env.GROQ_API_KEY || process.env.GROK_API_KEY),
+        openrouterConfigured: !!process.env.OPENROUTER_API_KEY
+      },
       chroma: {
         database: chromaConfig.database,
         configured: chromaConfig.isConfigured
@@ -2517,6 +2547,8 @@ Output ONLY valid JSON in this format:
         return res.status(400).json({ error: "Prompt is required" });
       }
 
+      lastAiDiagnosticError = null;
+
       const geminiApiKey = process.env.GEMINI_API_KEY;
       const groqApiKey = process.env.GROQ_API_KEY || process.env.GROK_API_KEY;
       const openrouterApiKey = process.env.OPENROUTER_API_KEY;
@@ -2783,11 +2815,15 @@ Instruction: Answer the question clearly and directly according to the requested
               answer += `#### 📌 ${m.docTitle} • ${m.secTitle}\n${m.text.slice(0, 600)}\n\n`;
             });
           } else {
+            const nextSteps = lastAiDiagnosticError
+              ? `⚠️ **AI Configuration Notice:** ${lastAiDiagnosticError}`
+              : `Please refer to the corresponding lecture slides in the sandbox viewer, or add an active \`GEMINI_API_KEY\` (starting with \`AIzaSy...\` from https://aistudio.google.com/apikey) or \`GROQ_API_KEY\` (from https://console.groq.com/keys) in your Render Environment Variables for live, real-time AI responses to any arbitrary question!`;
+
             answer += `**Question:** ${prompt}\n\n` +
               `Based on your course materials for **"${docName}"**:\n\n` +
               `- **Concept Scope:** "${prompt}"\n` +
               `- **Curriculum Reference:** This topic is part of your MCA syllabus.\n` +
-              `- **Next Steps:** Please refer to the corresponding lecture slides in the sandbox viewer, or add an active \`GEMINI_API_KEY\` or \`GROQ_API_KEY\` in your Render Environment Variables for live, real-time AI responses to any arbitrary question!`;
+              `- **Next Steps:** ${nextSteps}`;
           }
         }
       }
