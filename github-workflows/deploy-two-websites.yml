@@ -34,16 +34,16 @@ jobs:
       - name: Build Student Website (Default student view)
         env:
           VITE_PORTAL_MODE: student
-          VITE_BACKEND_URL: ${{ vars.VITE_STUDENT_BACKEND_URL || vars.VITE_BACKEND_URL || secrets.VITE_STUDENT_BACKEND_URL || secrets.VITE_BACKEND_URL || 'https://mca204-student-api.onrender.com' }}
-          VITE_STUDENT_BACKEND_URL: ${{ vars.VITE_STUDENT_BACKEND_URL || vars.VITE_BACKEND_URL || secrets.VITE_STUDENT_BACKEND_URL || secrets.VITE_BACKEND_URL || 'https://mca204-student-api.onrender.com' }}
+          VITE_BACKEND_URL: ${{ vars.VITE_STUDENT_BACKEND_URL || vars.VITE_BACKEND_URL || secrets.VITE_STUDENT_BACKEND_URL || secrets.VITE_BACKEND_URL || 'https://student-notes-hub-2.onrender.com' }}
+          VITE_STUDENT_BACKEND_URL: ${{ vars.VITE_STUDENT_BACKEND_URL || vars.VITE_BACKEND_URL || secrets.VITE_STUDENT_BACKEND_URL || secrets.VITE_BACKEND_URL || 'https://student-notes-hub-2.onrender.com' }}
         run: npm run build:student
 
       # 2. Build Website 2: Dedicated Teacher Website (for instructor)
       - name: Build Teacher Website (Upload studio & note manager)
         env:
           VITE_PORTAL_MODE: teacher
-          VITE_BACKEND_URL: ${{ vars.VITE_TEACHER_BACKEND_URL || vars.VITE_BACKEND_URL || secrets.VITE_TEACHER_BACKEND_URL || secrets.VITE_BACKEND_URL || 'https://mca204-teacher-api.onrender.com' }}
-          VITE_TEACHER_BACKEND_URL: ${{ vars.VITE_TEACHER_BACKEND_URL || vars.VITE_BACKEND_URL || secrets.VITE_TEACHER_BACKEND_URL || secrets.VITE_BACKEND_URL || 'https://mca204-teacher-api.onrender.com' }}
+          VITE_BACKEND_URL: ${{ vars.VITE_TEACHER_BACKEND_URL || vars.VITE_BACKEND_URL || secrets.VITE_TEACHER_BACKEND_URL || secrets.VITE_BACKEND_URL || 'https://student-notes-hub-2.onrender.com' }}
+          VITE_TEACHER_BACKEND_URL: ${{ vars.VITE_TEACHER_BACKEND_URL || vars.VITE_BACKEND_URL || secrets.VITE_TEACHER_BACKEND_URL || secrets.VITE_BACKEND_URL || 'https://student-notes-hub-2.onrender.com' }}
         run: npm run build:teacher
 
       # 3. Assemble dual directory structure for static hosting

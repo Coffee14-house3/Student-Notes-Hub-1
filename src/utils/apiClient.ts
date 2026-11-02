@@ -29,8 +29,19 @@ export function onBackendUrlChange(callback: (url: string) => void): () => void 
 }
 
 export function getBackendUrl(): string {
+  // Purge any legacy / stale mca204 URLs that may be cached in user's localStorage
+  try {
+    const custom = localStorage.getItem(STORAGE_KEY);
+    if (custom && custom.trim()) {
+      if (custom.includes("mca204-") || custom.includes("localhost:3000")) {
+        localStorage.removeItem(STORAGE_KEY);
+      } else {
+        return custom.trim().replace(/\/+$/, "");
+      }
+    }
+  } catch {}
+
   const hash = typeof window !== "undefined" ? window.location.hash.toLowerCase() : "";
-  // Determine if active portal context is faculty / teacher
   const isTeacherPortal = typeof window !== "undefined" && (
     (import.meta as any).env?.VITE_PORTAL_MODE === "teacher" ||
     (import.meta as any).env?.VITE_PORTAL_MODE === "faculty" ||
@@ -42,35 +53,28 @@ export function getBackendUrl(): string {
     window.location.pathname.includes("/faculty")
   );
 
-  // 1. Build-time environment variable (Injected by GitHub Actions / Option B)
-  const envTeacherUrl = (import.meta as any).env?.VITE_TEACHER_BACKEND_URL;
-  const envStudentUrl = (import.meta as any).env?.VITE_STUDENT_BACKEND_URL;
-  const envCommonUrl = (import.meta as any).env?.VITE_BACKEND_URL || (import.meta as any).env?.VITE_API_URL;
+  const cleanUrl = (url?: string): string => {
+    if (!url || typeof url !== "string") return "";
+    const trimmed = url.trim().replace(/\/+$/, "");
+    if (trimmed.includes("mca204-")) return ""; // Ignore obsolete mca204 endpoints
+    return trimmed;
+  };
 
-  if (isTeacherPortal && envTeacherUrl && typeof envTeacherUrl === "string" && envTeacherUrl.trim()) {
-    return envTeacherUrl.trim().replace(/\/+$/, "");
-  }
-  if (!isTeacherPortal && envStudentUrl && typeof envStudentUrl === "string" && envStudentUrl.trim()) {
-    return envStudentUrl.trim().replace(/\/+$/, "");
-  }
-  if (envCommonUrl && typeof envCommonUrl === "string" && envCommonUrl.trim()) {
-    return envCommonUrl.trim().replace(/\/+$/, "");
-  }
+  // 1. Build-time environment variable (filtered against obsolete endpoints)
+  const envTeacherUrl = cleanUrl((import.meta as any).env?.VITE_TEACHER_BACKEND_URL);
+  const envStudentUrl = cleanUrl((import.meta as any).env?.VITE_STUDENT_BACKEND_URL);
+  const envCommonUrl = cleanUrl((import.meta as any).env?.VITE_BACKEND_URL || (import.meta as any).env?.VITE_API_URL);
 
-  // 2. User/Teacher runtime override in localStorage
-  try {
-    const custom = localStorage.getItem(STORAGE_KEY);
-    if (custom && custom.trim()) {
-      return custom.trim().replace(/\/+$/, "");
-    }
-  } catch {}
+  if (isTeacherPortal && envTeacherUrl) return envTeacherUrl;
+  if (!isTeacherPortal && envStudentUrl) return envStudentUrl;
+  if (envCommonUrl) return envCommonUrl;
 
-  // 3. Automated Discovery: on static hosting (GitHub Pages), route to Render backend service
+  // 2. Automated Discovery: on static hosting (GitHub Pages), route to active Render backend
   if (isStaticHosting()) {
     return "https://student-notes-hub-2.onrender.com";
   }
 
-  // 4. Local dev / same-origin fallback
+  // 3. Local dev / same-origin fallback
   return "";
 }
 
