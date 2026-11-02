@@ -83,7 +83,16 @@ export const TeacherApp: React.FC<Props> = ({ isStandalone = true, onSwitchPorta
     };
 
     loadAndSync();
-    return () => { isMounted = false; };
+
+    const handleFocus = () => loadAndSync();
+    window.addEventListener("focus", handleFocus);
+    const interval = setInterval(loadAndSync, 12000);
+
+    return () => { 
+      isMounted = false;
+      window.removeEventListener("focus", handleFocus);
+      clearInterval(interval);
+    };
   }, []);
 
   // Fetch announcements on mount with local storage fallback
@@ -213,7 +222,11 @@ export const TeacherApp: React.FC<Props> = ({ isStandalone = true, onSwitchPorta
         newDoc = data.document || data;
       }
 
-      setDocuments(prev => [newDoc, ...prev]);
+      setDocuments(prev => {
+        const updated = [newDoc, ...prev.filter(d => d.id !== newDoc.id)];
+        saveDocumentsToStorage(updated);
+        return updated;
+      });
     } catch (err: any) {
       const msg = err?.message || "Failed to upload and process file";
       setUploadError(msg);
@@ -248,7 +261,11 @@ export const TeacherApp: React.FC<Props> = ({ isStandalone = true, onSwitchPorta
       }
       const data = await res.json();
       if (data.document) {
-        setDocuments(prev => [data.document, ...prev.filter(d => d.id !== data.document.id)]);
+        setDocuments(prev => {
+          const updated = [data.document, ...prev.filter(d => d.id !== data.document.id)];
+          saveDocumentsToStorage(updated);
+          return updated;
+        });
       }
       return data;
     } catch (err: any) {

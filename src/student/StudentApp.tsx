@@ -138,10 +138,10 @@ export const StudentApp: React.FC<Props> = ({ isStandalone = true, onSwitchPorta
 
     initialLoad();
 
-    // Auto-sync whenever tab gains focus (e.g. after teacher modified files) or every 20s
+    // Auto-sync whenever tab gains focus (e.g. after teacher modified files) or every 8s
     const handleFocus = () => handleSyncWithTeacher(false);
     window.addEventListener("focus", handleFocus);
-    const interval = setInterval(() => handleSyncWithTeacher(false), 20000);
+    const interval = setInterval(() => handleSyncWithTeacher(false), 8000);
 
     return () => {
       isMounted = false;

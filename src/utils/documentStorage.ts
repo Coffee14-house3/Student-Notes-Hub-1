@@ -1,5 +1,5 @@
 import { NoteDocument, CourseAnnouncement } from "../types";
-import { apiFetch } from "./apiClient";
+import { apiFetch, getBackendUrl } from "./apiClient";
 
 const DB_NAME = "CourseNotesHubDB";
 const DB_VERSION = 1;
@@ -254,10 +254,10 @@ export async function syncDocumentsWithServer(
   // 1. For Students: The teacher's server is the absolute ground truth.
   if (role === "student") {
     if (Array.isArray(serverDocs)) {
-      const teacherBase = "https://course-teacher-portal.onrender.com";
+      const backendBase = getBackendUrl();
       const updateUrl = (u?: string) => {
         if (!u) return u;
-        if (u.startsWith("/api/")) return `${teacherBase}${u}`;
+        if (u.startsWith("/api/")) return backendBase ? `${backendBase}${u}` : u;
         return u;
       };
       const publishedOnly = serverDocs.filter(d => d.isPublished !== false).map(doc => ({
