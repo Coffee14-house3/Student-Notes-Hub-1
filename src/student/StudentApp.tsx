@@ -7,7 +7,7 @@ import { SearchModal } from "./SearchModal";
 import { ExportModal } from "./ExportModal";
 import { AiAssistantModal } from "./AiAssistantModal";
 import { MicroArchitectureModal } from "../components/MicroArchitectureModal";
-import { GraduationCap, BookOpen, Share2, Check, ArrowLeft, Server, Layers } from "lucide-react";
+import { GraduationCap, BookOpen, Share2, Check, ArrowLeft, Server } from "lucide-react";
 import { apiFetch, getBackendUrl, isStaticHosting } from "../utils/apiClient";
 import {
   getStoredDocumentsSync,
@@ -248,24 +248,24 @@ export const StudentApp: React.FC<Props> = ({ isStandalone = true, onSwitchPorta
   const currentDocument = documents.find(d => d.id === activeView);
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col antialiased selection:bg-amber-500/30 selection:text-amber-200">
+    <div className="min-h-screen bg-slate-50 text-slate-900 flex flex-col antialiased selection:bg-amber-100 selection:text-amber-900">
       
       {/* Top Student Navigation Bar */}
-      <nav className="sticky top-0 z-40 bg-slate-950/90 backdrop-blur-md border-b border-slate-800 px-3 sm:px-5 py-2.5 flex items-center justify-between gap-3 text-xs flex-wrap">
+      <nav className="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-slate-200 px-3 sm:px-5 py-2.5 flex items-center justify-between gap-3 text-xs flex-wrap shadow-xs">
         
         {/* Left: Brand Identity */}
         <div className="flex items-center gap-2.5">
-          <div className="p-1.5 bg-amber-500 text-slate-950 font-bold rounded-xl shadow-sm">
+          <div className="p-1.5 bg-amber-500 text-slate-950 font-bold rounded-xl shadow-xs">
             <GraduationCap className="w-4 h-4" />
           </div>
           <div>
             <div className="flex items-center gap-2">
-              <span className="font-extrabold text-sm text-white tracking-tight">Student Notes Hub</span>
-              <span className="px-2 py-0.5 rounded-full bg-amber-500/15 text-amber-300 border border-amber-500/30 text-[10px] font-bold">
+              <span className="font-extrabold text-sm text-slate-900 tracking-tight">Student Notes Hub</span>
+              <span className="px-2 py-0.5 rounded-full bg-amber-50 text-amber-800 border border-amber-200 text-[10px] font-bold">
                 60 Students • MCA-204
               </span>
             </div>
-            <p className="hidden md:block text-[10px] text-slate-400">
+            <p className="hidden md:block text-[10px] text-slate-500">
               Verified Course Materials • Google Notes Sandbox • ChromaDB AI Tutor
             </p>
           </div>
@@ -273,38 +273,6 @@ export const StudentApp: React.FC<Props> = ({ isStandalone = true, onSwitchPorta
 
         {/* Right: Actions */}
         <div className="flex items-center gap-2 flex-wrap">
-
-          {/* Switch to Teacher Studio */}
-          <button
-            type="button"
-            onClick={() => {
-              try {
-                window.location.hash = "/faculty";
-              } catch {
-                // ignore
-              }
-              if (onSwitchPortal) {
-                onSwitchPortal("teacher");
-              }
-            }}
-            className="px-3 py-1.5 rounded-xl bg-purple-500/15 hover:bg-purple-500/25 text-purple-300 border border-purple-500/30 text-xs font-bold flex items-center gap-1.5 cursor-pointer transition-all shadow-sm"
-            title="Switch to Faculty / Teacher Studio (#/faculty)"
-          >
-            <Layers className="w-3.5 h-3.5 text-purple-400" />
-            <span>Faculty Studio</span>
-          </button>
-
-          {/* Connect / Verify Shared Backend */}
-          <button
-            type="button"
-            onClick={() => setIsMicroArchOpen(true)}
-            className="px-3 py-1.5 rounded-xl bg-blue-500/15 hover:bg-blue-500/25 text-blue-300 border border-blue-500/30 text-xs font-bold flex items-center gap-1.5 cursor-pointer transition-all shadow-sm"
-            title="Configure or test connection to Teacher Backend"
-          >
-            <Server className="w-3.5 h-3.5 text-blue-400" />
-            <span>Server Connection</span>
-          </button>
-
           {activeView !== "dashboard" && (
             <button
               onClick={() => {
@@ -313,7 +281,7 @@ export const StudentApp: React.FC<Props> = ({ isStandalone = true, onSwitchPorta
                 url.searchParams.delete("doc");
                 window.history.pushState({}, "", url.toString());
               }}
-              className="px-3 py-1.5 bg-slate-900 hover:bg-slate-800 text-slate-200 border border-slate-700 rounded-lg text-xs font-semibold flex items-center gap-1.5 cursor-pointer transition-colors"
+              className="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-300 rounded-lg text-xs font-semibold flex items-center gap-1.5 cursor-pointer transition-colors"
             >
               <ArrowLeft className="w-3.5 h-3.5" />
               <span>Back to Course Notes</span>
@@ -324,9 +292,9 @@ export const StudentApp: React.FC<Props> = ({ isStandalone = true, onSwitchPorta
 
       {/* Render Free Tier 15-Minute Spin-Down Alert */}
       {isServerWakingUp && (
-        <div className="bg-amber-950/80 border-b border-amber-500/30 px-4 py-2 text-xs text-amber-200 flex items-center justify-between gap-3 animate-pulse z-30">
+        <div className="bg-amber-50 border-b border-amber-200 px-4 py-2 text-xs text-amber-900 flex items-center justify-between gap-3 animate-pulse z-30">
           <div className="flex items-center gap-2">
-            <span className="w-2 h-2 rounded-full bg-amber-400 animate-ping inline-block" />
+            <span className="w-2 h-2 rounded-full bg-amber-500 animate-ping inline-block" />
             <span>
               <strong>Connecting to server...</strong> Render backend is waking up from idle (~30-50s). You can still read cached notes immediately!
             </span>

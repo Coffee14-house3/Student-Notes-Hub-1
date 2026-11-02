@@ -527,30 +527,30 @@ export const TeacherPortal: React.FC<Props> = ({
   const draftCount = documents.filter(d => d.isPublished === false).length;
 
   return (
-    <div className="flex-1 bg-slate-950 text-slate-100 p-4 sm:p-8 overflow-y-auto min-h-screen">
+    <div className="flex-1 bg-slate-50 text-slate-900 p-4 sm:p-8 overflow-y-auto min-h-screen">
       <div className="max-w-6xl mx-auto space-y-8">
         
         {/* Teacher Studio Header */}
-        <div className="bg-gradient-to-r from-purple-950/70 via-slate-900 to-amber-950/30 border border-purple-500/30 rounded-3xl p-6 sm:p-8 shadow-2xl relative overflow-hidden">
-          <div className="absolute top-0 right-0 w-96 h-96 bg-purple-500/10 rounded-full blur-3xl pointer-events-none" />
+        <div className="bg-gradient-to-r from-purple-50 via-white to-indigo-50 border border-purple-200 rounded-3xl p-6 sm:p-8 shadow-xs relative overflow-hidden">
+          <div className="absolute top-0 right-0 w-96 h-96 bg-purple-500/5 rounded-full blur-3xl pointer-events-none" />
           
           <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 relative z-10">
             <div className="space-y-2 max-w-2xl">
               <div className="flex items-center gap-2 flex-wrap">
-                <span className="px-3 py-1 rounded-full bg-purple-500/20 text-purple-300 border border-purple-500/30 text-xs font-bold uppercase tracking-wide flex items-center gap-1.5 shadow-xs">
-                  <BookOpen className="w-4 h-4 text-purple-400" /> Teacher & Instructor Studio
+                <span className="px-3 py-1 rounded-full bg-purple-100 text-purple-800 border border-purple-200 text-xs font-bold uppercase tracking-wide flex items-center gap-1.5 shadow-xs">
+                  <BookOpen className="w-4 h-4 text-purple-600" /> Teacher & Instructor Studio
                 </span>
-                <span className="px-2.5 py-0.5 rounded-full bg-slate-800 text-slate-300 border border-slate-700 text-xs font-medium">
+                <span className="px-2.5 py-0.5 rounded-full bg-slate-100 text-slate-700 border border-slate-200 text-xs font-medium">
                   Subject & Unit Curriculum Manager
                 </span>
               </div>
               
-              <h1 className="text-2xl sm:text-4xl font-extrabold text-white tracking-tight">
+              <h1 className="text-2xl sm:text-4xl font-extrabold text-slate-900 tracking-tight">
                 Course Notes Studio
               </h1>
               
-              <p className="text-sm sm:text-base text-slate-300 leading-relaxed">
-                Upload and categorize course materials <strong className="text-amber-400">Subject-wise</strong> and <strong className="text-purple-300">Unit-wise</strong>. Broadcast announcements, manage draft/published visibility, and verify student study materials.
+              <p className="text-sm sm:text-base text-slate-600 leading-relaxed">
+                Upload and categorize course materials <strong className="text-amber-700">Subject-wise</strong> and <strong className="text-purple-700">Unit-wise</strong>. Broadcast announcements, manage draft/published visibility, and verify student study materials.
               </p>
             </div>
 
@@ -559,10 +559,10 @@ export const TeacherPortal: React.FC<Props> = ({
               {(onRemoveUpdatedNotes || onRestoreDefaultNotes) && (
                 <button
                   onClick={() => setShowResetConfirm(true)}
-                  className="px-3.5 py-2 rounded-xl bg-rose-950/40 hover:bg-rose-900/60 text-rose-300 border border-rose-800/60 text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer shadow-sm hover:border-rose-600"
+                  className="px-3.5 py-2 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer shadow-xs hover:border-rose-300"
                   title="Remove all updated and uploaded notes, restoring original notes"
                 >
-                  <RotateCcw className="w-4 h-4 text-rose-400" />
+                  <RotateCcw className="w-4 h-4 text-rose-500" />
                   <span>Remove Updated Notes</span>
                   {documents.filter(d => d.id.startsWith("upload-") || d.id.includes("-copy") || d.id.includes("-merged")).length > 0 && (
                     <span className="px-1.5 py-0.2 rounded-full bg-rose-500 text-white font-bold text-[10px]">
@@ -575,44 +575,44 @@ export const TeacherPortal: React.FC<Props> = ({
           </div>
 
           {/* Quick Metrics Bar */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-6 pt-6 border-t border-slate-800/80 text-xs">
-            <div className="bg-slate-900/70 p-3 rounded-xl border border-slate-800 flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-purple-500/10 text-purple-400">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-6 pt-6 border-t border-purple-100 text-xs">
+            <div className="bg-white p-3 rounded-xl border border-slate-200 flex items-center gap-3 shadow-xs">
+              <div className="p-2 rounded-lg bg-purple-50 text-purple-600 border border-purple-100">
                 <Folder className="w-4 h-4" />
               </div>
               <div>
-                <div className="text-base font-bold text-white">{allSubjects.length} Subjects</div>
-                <div className="text-slate-400 text-[11px]">{allUnits.length} Units Active</div>
+                <div className="text-base font-bold text-slate-900">{allSubjects.length} Subjects</div>
+                <div className="text-slate-500 text-[11px]">{allUnits.length} Units Active</div>
               </div>
             </div>
 
-            <div className="bg-slate-900/70 p-3 rounded-xl border border-slate-800 flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-emerald-500/10 text-emerald-400">
+            <div className="bg-white p-3 rounded-xl border border-slate-200 flex items-center gap-3 shadow-xs">
+              <div className="p-2 rounded-lg bg-emerald-50 text-emerald-600 border border-emerald-100">
                 <CheckCircle2 className="w-4 h-4" />
               </div>
               <div>
-                <div className="text-base font-bold text-white">{publishedCount} Notes</div>
-                <div className="text-slate-400 text-[11px]">Published to Students</div>
+                <div className="text-base font-bold text-slate-900">{publishedCount} Notes</div>
+                <div className="text-slate-500 text-[11px]">Published to Students</div>
               </div>
             </div>
 
-            <div className="bg-slate-900/70 p-3 rounded-xl border border-slate-800 flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-amber-500/10 text-amber-400">
+            <div className="bg-white p-3 rounded-xl border border-slate-200 flex items-center gap-3 shadow-xs">
+              <div className="p-2 rounded-lg bg-amber-50 text-amber-600 border border-amber-100">
                 <Lock className="w-4 h-4" />
               </div>
               <div>
-                <div className="text-base font-bold text-white">{draftCount} Drafts</div>
-                <div className="text-slate-400 text-[11px]">Drafts / In-Review</div>
+                <div className="text-base font-bold text-slate-900">{draftCount} Drafts</div>
+                <div className="text-slate-500 text-[11px]">Drafts / In-Review</div>
               </div>
             </div>
 
-            <div className="bg-slate-900/70 p-3 rounded-xl border border-slate-800 flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-sky-500/10 text-sky-400">
+            <div className="bg-white p-3 rounded-xl border border-slate-200 flex items-center gap-3 shadow-xs">
+              <div className="p-2 rounded-lg bg-sky-50 text-sky-600 border border-sky-100">
                 <Layers className="w-4 h-4" />
               </div>
               <div>
-                <div className="text-base font-bold text-white">{totalPages} Pages</div>
-                <div className="text-slate-400 text-[11px]">Total Study Content</div>
+                <div className="text-base font-bold text-slate-900">{totalPages} Pages</div>
+                <div className="text-slate-500 text-[11px]">Total Study Content</div>
               </div>
             </div>
           </div>
@@ -620,12 +620,12 @@ export const TeacherPortal: React.FC<Props> = ({
 
 
         {/* Upload Studio Card (Drag & Drop + Subject/Unit Form) */}
-        <div className="bg-slate-900/90 border border-slate-800 rounded-3xl p-6 sm:p-8 shadow-xl space-y-6">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-800 pb-4">
+        <div className="bg-white border border-slate-200 rounded-3xl p-6 sm:p-8 shadow-xs space-y-6">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-100 pb-4">
             <div>
               <div className="flex items-center gap-2 mb-1">
-                <h2 className="text-lg font-bold text-white flex items-center gap-2">
-                  <Upload className="w-5 h-5 text-amber-400" /> Upload Course Material (PDF, DOCX, PPT)
+                <h2 className="text-lg font-bold text-slate-900 flex items-center gap-2">
+                  <Upload className="w-5 h-5 text-amber-500" /> Upload Course Material (PDF, DOCX, PPT)
                 </h2>
               </div>
             </div>
@@ -654,44 +654,44 @@ export const TeacherPortal: React.FC<Props> = ({
                 }}
                 className={`border-2 border-dashed rounded-2xl p-6 sm:p-8 text-center transition-all flex flex-col items-center justify-center gap-3 relative min-h-[240px] ${
                   effectiveUploading
-                    ? "border-amber-500/80 bg-amber-950/20 cursor-wait pointer-events-none"
+                    ? "border-amber-500/80 bg-amber-50 cursor-wait pointer-events-none"
                     : dragActive
-                    ? "border-amber-500 bg-amber-500/10 scale-[1.01] cursor-pointer"
+                    ? "border-amber-500 bg-amber-50/60 scale-[1.01] cursor-pointer"
                     : selectedFile
-                    ? "border-emerald-500/60 bg-emerald-950/20 cursor-pointer"
-                    : "border-slate-700 hover:border-amber-500/60 bg-slate-950/50 hover:bg-slate-900 cursor-pointer"
+                    ? "border-emerald-500/80 bg-emerald-50/50 cursor-pointer"
+                    : "border-slate-300 hover:border-amber-500 bg-slate-50/70 hover:bg-amber-50/30 cursor-pointer"
                 }`}
               >
                 {effectiveUploading ? (
                   <div className="space-y-3 w-full max-w-[280px]">
                     <div className="relative mx-auto w-14 h-14 flex items-center justify-center">
-                      <div className="absolute inset-0 rounded-full border-4 border-amber-500/20 border-t-amber-400 animate-spin" />
-                      <Upload className="w-6 h-6 text-amber-400 animate-pulse" />
+                      <div className="absolute inset-0 rounded-full border-4 border-amber-500/20 border-t-amber-500 animate-spin" />
+                      <Upload className="w-6 h-6 text-amber-500 animate-pulse" />
                     </div>
                     <div>
-                      <div className="text-sm font-bold text-white truncate">
+                      <div className="text-sm font-bold text-slate-900 truncate">
                         {selectedFile?.name || "Ingesting Document"}
                       </div>
-                      <div className="text-xs text-amber-400 font-mono font-semibold mt-1">
+                      <div className="text-xs text-amber-600 font-mono font-semibold mt-1">
                         {uploadStage || "Processing slides & vector index..."}
                       </div>
                     </div>
-                    <div className="w-full bg-slate-900 rounded-full h-2 overflow-hidden border border-slate-700/80">
+                    <div className="w-full bg-slate-200 rounded-full h-2 overflow-hidden border border-slate-300">
                       <div 
                         className="bg-gradient-to-r from-amber-500 via-emerald-400 to-amber-400 h-full rounded-full transition-all duration-300"
                         style={{ width: `${uploadPercent}%` }}
                       />
                     </div>
-                    <div className="text-[11px] text-slate-400">
+                    <div className="text-[11px] text-slate-500">
                       Please wait • {uploadPercent}% complete
                     </div>
                   </div>
                 ) : selectedFile ? (
                   <div className="space-y-1">
-                    <div className="text-sm font-bold text-white truncate max-w-[240px]">
+                    <div className="text-sm font-bold text-slate-900 truncate max-w-[240px]">
                       {selectedFile.name}
                     </div>
-                    <div className="text-xs text-emerald-400 font-semibold flex items-center justify-center gap-1.5">
+                    <div className="text-xs text-emerald-600 font-semibold flex items-center justify-center gap-1.5">
                       <span>
                         {selectedFile.size > 1024 * 1024 
                           ? `${(selectedFile.size / (1024 * 1024)).toFixed(1)} MB` 
@@ -699,7 +699,7 @@ export const TeacherPortal: React.FC<Props> = ({
                       </span>
                       <span>• Auto-scale pipeline verified</span>
                     </div>
-                    <div className="text-[10px] text-indigo-300/80">
+                    <div className="text-[10px] text-indigo-600">
                       {selectedFile.size > 15 * 1024 * 1024 
                         ? "⚡ Direct binary stream upload active (Zero memory bloat)" 
                         : "✓ Ready to parse & vector index"}
@@ -710,21 +710,21 @@ export const TeacherPortal: React.FC<Props> = ({
                         e.stopPropagation();
                         setSelectedFile(null);
                       }}
-                      className="text-[11px] text-rose-400 hover:underline pt-1 cursor-pointer"
+                      className="text-[11px] text-rose-600 hover:underline pt-1 cursor-pointer font-medium"
                     >
                       Remove file
                     </button>
                   </div>
                 ) : (
                   <div className="space-y-1">
-                    <div className="text-sm font-bold text-white">
-                      Drag & drop note file, or <span className="text-amber-400">browse</span>
+                    <div className="text-sm font-bold text-slate-900">
+                      Drag & drop note file, or <span className="text-amber-600 underline">browse</span>
                     </div>
-                    <div className="text-xs text-slate-400">
+                    <div className="text-xs text-slate-500">
                       PDF, Word (.docx, .doc), PowerPoint (.pptx, .ppt), Code
                     </div>
                     <div className="pt-1.5 flex items-center justify-center">
-                      <span className="px-2.5 py-1 rounded-full bg-slate-800 border border-slate-700 text-[10px] text-slate-300 font-semibold">
+                      <span className="px-2.5 py-1 rounded-full bg-slate-100 border border-slate-200 text-[10px] text-slate-600 font-semibold">
                         Max file size: 1.0 GB
                       </span>
                     </div>
@@ -734,35 +734,35 @@ export const TeacherPortal: React.FC<Props> = ({
 
               {/* Supported Format Badges */}
               <div className="grid grid-cols-3 gap-2 pt-1">
-                <div className="bg-red-950/30 border border-red-900/40 rounded-xl p-2 text-center">
-                  <div className="text-[11px] font-bold text-red-300">PDF</div>
-                  <div className="text-[9px] text-slate-400">.pdf docs</div>
+                <div className="bg-rose-50 border border-rose-200 rounded-xl p-2 text-center shadow-xs">
+                  <div className="text-[11px] font-bold text-rose-700">PDF</div>
+                  <div className="text-[9px] text-slate-500">.pdf docs</div>
                 </div>
-                <div className="bg-blue-950/30 border border-blue-900/40 rounded-xl p-2 text-center">
-                  <div className="text-[11px] font-bold text-blue-300">Word</div>
-                  <div className="text-[9px] text-slate-400">.docx / .doc</div>
+                <div className="bg-blue-50 border border-blue-200 rounded-xl p-2 text-center shadow-xs">
+                  <div className="text-[11px] font-bold text-blue-700">Word</div>
+                  <div className="text-[9px] text-slate-500">.docx / .doc</div>
                 </div>
-                <div className="bg-amber-950/30 border border-amber-900/40 rounded-xl p-2 text-center">
-                  <div className="text-[11px] font-bold text-amber-300">PowerPoint</div>
-                  <div className="text-[9px] text-slate-400">.pptx / .ppt</div>
+                <div className="bg-amber-50 border border-amber-200 rounded-xl p-2 text-center shadow-xs">
+                  <div className="text-[11px] font-bold text-amber-700">PowerPoint</div>
+                  <div className="text-[9px] text-slate-500">.pptx / .ppt</div>
                 </div>
               </div>
 
               {effectiveUploadError && (
-                <div className="p-3 bg-rose-950/40 border border-rose-500/30 rounded-xl text-xs text-rose-300 flex items-center gap-2">
-                  <AlertCircle className="w-4 h-4 text-rose-400 shrink-0" />
+                <div className="p-3 bg-rose-50 border border-rose-200 rounded-xl text-xs text-rose-700 flex items-center gap-2">
+                  <AlertCircle className="w-4 h-4 text-rose-500 shrink-0" />
                   <span>{effectiveUploadError}</span>
                 </div>
               )}
             </div>
 
             {/* Right: Subject, Unit & Metadata Settings (7 cols) */}
-            <div className="lg:col-span-7 space-y-4 bg-slate-950/60 border border-slate-800 rounded-2xl p-5">
-              <div className="flex items-center justify-between border-b border-slate-800 pb-2">
-                <h3 className="text-xs font-bold text-slate-300 uppercase tracking-wider flex items-center gap-2">
-                  <SlidersHorizontal className="w-3.5 h-3.5 text-amber-400" /> Subject & Unit Classification
+            <div className="lg:col-span-7 space-y-4 bg-slate-50 border border-slate-200 rounded-2xl p-5 shadow-xs">
+              <div className="flex items-center justify-between border-b border-slate-200 pb-2">
+                <h3 className="text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center gap-2">
+                  <SlidersHorizontal className="w-3.5 h-3.5 text-amber-500" /> Subject & Unit Classification
                 </h3>
-                <span className="text-[11px] text-amber-400 font-mono">
+                <span className="text-[11px] text-amber-700 font-mono font-semibold">
                   {effectiveSubject} • {effectiveUnit}
                 </span>
               </div>
@@ -771,7 +771,7 @@ export const TeacherPortal: React.FC<Props> = ({
                 
                 {/* 1. Document Title */}
                 <div className="sm:col-span-2">
-                  <label className="block text-xs font-medium text-slate-400 mb-1">
+                  <label className="block text-xs font-medium text-slate-600 mb-1">
                     Document Title
                   </label>
                   <input
@@ -780,13 +780,13 @@ export const TeacherPortal: React.FC<Props> = ({
                     value={customTitle}
                     onChange={(e) => setCustomTitle(e.target.value)}
                     placeholder="e.g. EC2 Virtual Servers & Database Architecture"
-                    className="w-full bg-slate-900 border border-slate-800 rounded-xl px-3.5 py-2 text-xs text-slate-100 placeholder-slate-500 focus:outline-none focus:border-amber-500 disabled:opacity-60 disabled:cursor-not-allowed"
+                    className="w-full bg-white border border-slate-300 rounded-xl px-3.5 py-2 text-xs text-slate-900 placeholder-slate-400 focus:outline-none focus:border-amber-500 shadow-xs disabled:opacity-60 disabled:cursor-not-allowed"
                   />
                 </div>
 
                 {/* 2. Subject / Course (Direct text input) */}
                 <div>
-                  <label className="block text-xs font-medium text-slate-400 mb-1">
+                  <label className="block text-xs font-medium text-slate-600 mb-1">
                     Subject / Course Name
                   </label>
                   <input
@@ -796,7 +796,7 @@ export const TeacherPortal: React.FC<Props> = ({
                     value={subjectInput}
                     onChange={(e) => setSubjectInput(e.target.value)}
                     placeholder="Type subject (e.g. Operating Systems, Cloud Computing)..."
-                    className="w-full bg-slate-900 border border-slate-800 rounded-xl px-3.5 py-2 text-xs text-slate-100 placeholder-slate-500 focus:outline-none focus:border-amber-500 disabled:opacity-60 disabled:cursor-not-allowed"
+                    className="w-full bg-white border border-slate-300 rounded-xl px-3.5 py-2 text-xs text-slate-900 placeholder-slate-400 focus:outline-none focus:border-amber-500 shadow-xs disabled:opacity-60 disabled:cursor-not-allowed"
                   />
                   {allSubjects.length > 0 && (
                     <datalist id="existing-subjects-list">
@@ -809,7 +809,7 @@ export const TeacherPortal: React.FC<Props> = ({
 
                 {/* 3. Unit Organization */}
                 <div>
-                  <label className="block text-xs font-medium text-slate-400 mb-1">
+                  <label className="block text-xs font-medium text-slate-600 mb-1">
                     Unit / Module Name
                   </label>
                   <input
@@ -819,7 +819,7 @@ export const TeacherPortal: React.FC<Props> = ({
                     value={unitInput}
                     onChange={(e) => setUnitInput(e.target.value)}
                     placeholder="e.g. Unit 1, Module 2, Lab Manual"
-                    className="w-full bg-slate-900 border border-slate-800 rounded-xl px-3.5 py-2 text-xs text-slate-100 placeholder-slate-500 focus:outline-none focus:border-amber-500 disabled:opacity-60 disabled:cursor-not-allowed"
+                    className="w-full bg-white border border-slate-300 rounded-xl px-3.5 py-2 text-xs text-slate-900 placeholder-slate-400 focus:outline-none focus:border-amber-500 shadow-xs disabled:opacity-60 disabled:cursor-not-allowed"
                   />
                   <datalist id="existing-units-list">
                     <option value="Unit 1" />
@@ -837,7 +837,7 @@ export const TeacherPortal: React.FC<Props> = ({
 
                 {/* 4. Unit Topic Subtitle */}
                 <div>
-                  <label className="block text-xs font-medium text-slate-400 mb-1">
+                  <label className="block text-xs font-medium text-slate-600 mb-1">
                     Unit Topic / Chapter Name (Optional)
                   </label>
                   <input
@@ -846,13 +846,13 @@ export const TeacherPortal: React.FC<Props> = ({
                     value={unitTitleInput}
                     onChange={(e) => setUnitTitleInput(e.target.value)}
                     placeholder="e.g. Compute Services & IaaS Deployments"
-                    className="w-full bg-slate-900 border border-slate-800 rounded-xl px-3.5 py-2 text-xs text-slate-100 placeholder-slate-500 focus:outline-none focus:border-amber-500 disabled:opacity-60 disabled:cursor-not-allowed"
+                    className="w-full bg-white border border-slate-300 rounded-xl px-3.5 py-2 text-xs text-slate-900 placeholder-slate-400 focus:outline-none focus:border-amber-500 shadow-xs disabled:opacity-60 disabled:cursor-not-allowed"
                   />
                 </div>
 
                 {/* 5. Course Code */}
                 <div>
-                  <label className="block text-xs font-medium text-slate-400 mb-1">
+                  <label className="block text-xs font-medium text-slate-600 mb-1">
                     Course Code / Semester (Optional)
                   </label>
                   <input
@@ -861,13 +861,13 @@ export const TeacherPortal: React.FC<Props> = ({
                     value={courseCodeInput}
                     onChange={(e) => setCourseCodeInput(e.target.value)}
                     placeholder="e.g. MCA-204 or CS-301"
-                    className="w-full bg-slate-900 border border-slate-800 rounded-xl px-3.5 py-2 text-xs text-slate-100 placeholder-slate-500 focus:outline-none focus:border-amber-500 disabled:opacity-60 disabled:cursor-not-allowed"
+                    className="w-full bg-white border border-slate-300 rounded-xl px-3.5 py-2 text-xs text-slate-900 placeholder-slate-400 focus:outline-none focus:border-amber-500 shadow-xs disabled:opacity-60 disabled:cursor-not-allowed"
                   />
                 </div>
 
                 {/* 6. Instructor Name */}
                 <div>
-                  <label className="block text-xs font-medium text-slate-400 mb-1">
+                  <label className="block text-xs font-medium text-slate-600 mb-1">
                     Instructor Name (Optional)
                   </label>
                   <input
@@ -876,13 +876,13 @@ export const TeacherPortal: React.FC<Props> = ({
                     value={instructorName}
                     onChange={(e) => setInstructorName(e.target.value)}
                     placeholder="e.g. Prof. Alan or Dr. Sharma"
-                    className="w-full bg-slate-900 border border-slate-800 rounded-xl px-3.5 py-2 text-xs text-slate-100 placeholder-slate-500 focus:outline-none focus:border-amber-500 disabled:opacity-60 disabled:cursor-not-allowed"
+                    className="w-full bg-white border border-slate-300 rounded-xl px-3.5 py-2 text-xs text-slate-900 placeholder-slate-400 focus:outline-none focus:border-amber-500 shadow-xs disabled:opacity-60 disabled:cursor-not-allowed"
                   />
                 </div>
 
                 {/* 7. Visibility */}
                 <div className="flex flex-col justify-end">
-                  <label className="block text-xs font-medium text-slate-400 mb-1">
+                  <label className="block text-xs font-medium text-slate-600 mb-1">
                     Student Visibility
                   </label>
                   <button
@@ -891,18 +891,18 @@ export const TeacherPortal: React.FC<Props> = ({
                     onClick={() => setIsPublishedOnUpload(!isPublishedOnUpload)}
                     className={`flex items-center gap-2 px-3 py-2 rounded-xl border text-xs font-semibold transition-all cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed ${
                       isPublishedOnUpload
-                        ? "bg-emerald-500/20 border-emerald-500/40 text-emerald-300"
-                        : "bg-slate-800 border-slate-700 text-slate-400"
+                        ? "bg-emerald-50 border-emerald-300 text-emerald-800"
+                        : "bg-slate-100 border-slate-300 text-slate-700"
                     }`}
                   >
                     {isPublishedOnUpload ? (
                       <>
-                        <Unlock className="w-3.5 h-3.5 text-emerald-400" />
+                        <Unlock className="w-3.5 h-3.5 text-emerald-600" />
                         <span>🟢 Published (Visible to Students)</span>
                       </>
                     ) : (
                       <>
-                        <Lock className="w-3.5 h-3.5 text-amber-400" />
+                        <Lock className="w-3.5 h-3.5 text-amber-600" />
                         <span>🟡 Save as Draft (Hidden)</span>
                       </>
                     )}
@@ -913,16 +913,16 @@ export const TeacherPortal: React.FC<Props> = ({
 
               {/* Dedicated Upload Processing & Loading Banner */}
               {effectiveUploading && (
-                <div className="p-4 rounded-2xl bg-amber-500/15 border-2 border-amber-500/50 flex flex-col gap-3 shadow-2xl">
+                <div className="p-4 rounded-2xl bg-amber-50 border-2 border-amber-300 flex flex-col gap-3 shadow-sm">
                   <div className="flex items-center justify-between text-xs">
-                    <div className="flex items-center gap-2 text-amber-300 font-extrabold">
-                      <RefreshCw className="w-4 h-4 animate-spin text-amber-400" />
+                    <div className="flex items-center gap-2 text-amber-900 font-extrabold">
+                      <RefreshCw className="w-4 h-4 animate-spin text-amber-600" />
                       <span>Uploading & Processing Document...</span>
                     </div>
-                    <span className="font-mono text-amber-400 font-extrabold text-xs">{uploadPercent}%</span>
+                    <span className="font-mono text-amber-700 font-extrabold text-xs">{uploadPercent}%</span>
                   </div>
 
-                  <div className="w-full bg-slate-900 rounded-full h-3 overflow-hidden border border-slate-700/80 p-0.5">
+                  <div className="w-full bg-slate-200 rounded-full h-3 overflow-hidden border border-slate-300 p-0.5">
                     <div 
                       className="bg-gradient-to-r from-amber-500 via-amber-400 to-emerald-400 h-full rounded-full transition-all duration-300 shadow-sm"
                       style={{ width: `${uploadPercent}%` }}
@@ -930,44 +930,44 @@ export const TeacherPortal: React.FC<Props> = ({
                   </div>
 
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1 text-[11px]">
-                    <span className="text-slate-200 font-medium flex items-center gap-1.5 truncate">
-                      <span className="w-2 h-2 rounded-full bg-amber-400 animate-ping shrink-0" />
+                    <span className="text-slate-800 font-medium flex items-center gap-1.5 truncate">
+                      <span className="w-2 h-2 rounded-full bg-amber-500 animate-ping shrink-0" />
                       <span className="truncate">{uploadStage || `Processing ${selectedFile?.name}...`}</span>
                     </span>
-                    <span className="text-amber-400/90 font-mono text-[10px] uppercase tracking-wider shrink-0 font-bold">
+                    <span className="text-amber-800 font-mono text-[10px] uppercase tracking-wider shrink-0 font-bold">
                       Target: {effectiveUnit}
                     </span>
                   </div>
 
-                  <div className="text-[11px] text-amber-200 bg-amber-950/40 p-3 rounded-xl border border-amber-500/40 flex items-start gap-2.5 shadow-inner">
-                    <div className="w-2 h-2 rounded-full bg-amber-400 shrink-0 mt-1" />
+                  <div className="text-[11px] text-amber-900 bg-amber-100/70 p-3 rounded-xl border border-amber-300 flex items-start gap-2.5">
+                    <div className="w-2 h-2 rounded-full bg-amber-500 shrink-0 mt-1" />
                     <p className="leading-snug">
-                      <strong className="text-amber-300">Teacher Notice:</strong> Processing presentation slides, extracting images, and indexing for AI search. <strong>Please wait — do not click the upload button again or refresh the page.</strong>
+                      <strong className="text-amber-950">Teacher Notice:</strong> Processing presentation slides, extracting images, and indexing for AI search. <strong>Please wait — do not click the upload button again or refresh the page.</strong>
                     </p>
                   </div>
                 </div>
               )}
 
               {uploadSuccessMessage && (
-                <div className="p-3.5 rounded-xl bg-emerald-500/15 border border-emerald-500/40 text-emerald-300 text-xs flex items-center gap-2.5 shadow-md">
-                  <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
+                <div className="p-3.5 rounded-xl bg-emerald-50 border border-emerald-300 text-emerald-800 text-xs flex items-center gap-2.5 shadow-sm">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
                   <span className="font-semibold">{uploadSuccessMessage}</span>
                 </div>
               )}
 
               {/* Upload Button */}
-              <div className="pt-3 border-t border-slate-800 flex items-center justify-between gap-3">
-                <div className="text-[11px] text-slate-400 hidden sm:block">
-                  Destination: <span className="text-white font-medium">{effectiveSubject}</span> &gt; <span className="text-amber-400 font-medium">{effectiveUnit}</span>
+              <div className="pt-3 border-t border-slate-200 flex items-center justify-between gap-3">
+                <div className="text-[11px] text-slate-500 hidden sm:block">
+                  Destination: <span className="text-slate-900 font-medium">{effectiveSubject}</span> &gt; <span className="text-amber-700 font-medium">{effectiveUnit}</span>
                 </div>
 
                 <button
                   type="button"
                   onClick={handleExecuteUpload}
                   disabled={!selectedFile || effectiveUploading}
-                  className={`px-5 py-2.5 rounded-xl text-xs font-bold flex items-center gap-2 transition-all shadow-md ${
+                  className={`px-5 py-2.5 rounded-xl text-xs font-bold flex items-center gap-2 transition-all shadow-xs ${
                     !selectedFile || effectiveUploading
-                      ? "bg-slate-800 text-amber-400/90 border border-amber-500/30 cursor-not-allowed opacity-90 shadow-none pointer-events-none"
+                      ? "bg-slate-200 text-slate-400 border border-slate-300 cursor-not-allowed opacity-80 shadow-none pointer-events-none"
                       : "bg-amber-500 hover:bg-amber-400 text-slate-950 hover:shadow-amber-500/20 cursor-pointer"
                   }`}
                 >
@@ -990,57 +990,57 @@ export const TeacherPortal: React.FC<Props> = ({
         </div>
 
         {/* Google Drive / Google Docs / Slides Link Importer Card */}
-        <div className="bg-slate-900/90 border border-indigo-900/40 rounded-3xl p-6 sm:p-8 shadow-xl space-y-5">
-          <div className="flex items-center justify-between border-b border-slate-800 pb-3 flex-wrap gap-2">
+        <div className="bg-white border border-slate-200 rounded-3xl p-6 sm:p-8 shadow-xs space-y-5">
+          <div className="flex items-center justify-between border-b border-slate-100 pb-3 flex-wrap gap-2">
             <div className="flex items-center gap-2">
-              <HardDrive className="w-5 h-5 text-indigo-400" />
-              <h3 className="font-bold text-white text-base">🔗 Upload Course Notes via Google Link</h3>
+              <HardDrive className="w-5 h-5 text-indigo-600" />
+              <h3 className="font-bold text-slate-900 text-base">🔗 Upload Course Notes via Google Link</h3>
             </div>
-            <span className="px-2.5 py-0.5 rounded-full bg-indigo-500/15 text-indigo-300 border border-indigo-500/30 text-[11px] font-semibold">
+            <span className="px-2.5 py-0.5 rounded-full bg-indigo-50 text-indigo-700 border border-indigo-200 text-[11px] font-semibold">
               Docs • Drive PDF • Slides • Sheets
             </span>
           </div>
 
 
           {gdriveSuccess && (
-            <div className="p-3.5 rounded-xl bg-emerald-500/15 border border-emerald-500/40 text-emerald-300 text-xs flex items-center gap-2.5 shadow-md animate-fadeIn">
-              <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
+            <div className="p-3.5 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs flex items-center gap-2.5 shadow-xs animate-fadeIn">
+              <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
               <span className="font-semibold">{gdriveSuccess}</span>
             </div>
           )}
 
           {gdriveError && (
-            <div className="p-3.5 rounded-xl bg-rose-500/15 border border-rose-500/40 text-rose-300 text-xs flex items-center gap-2.5 shadow-md animate-fadeIn">
-              <AlertCircle className="w-4 h-4 text-rose-400 shrink-0" />
+            <div className="p-3.5 rounded-xl bg-rose-50 border border-rose-200 text-rose-800 text-xs flex items-center gap-2.5 shadow-xs animate-fadeIn">
+              <AlertCircle className="w-4 h-4 text-rose-500 shrink-0" />
               <span className="font-semibold">{gdriveError}</span>
             </div>
           )}
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-1">
-              <label className="text-xs font-medium text-slate-400">Document Title</label>
+              <label className="text-xs font-semibold text-slate-700">Document Title</label>
               <input
                 type="text"
                 value={gdriveTitle}
                 onChange={(e) => setGdriveTitle(e.target.value)}
                 placeholder="e.g. Unit 3 Cloud Architecture & Security"
-                className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3.5 py-2 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500"
+                className="w-full bg-white border border-slate-300 rounded-xl px-3.5 py-2 text-xs text-slate-900 placeholder-slate-400 focus:outline-none focus:border-indigo-500 shadow-2xs"
               />
             </div>
             <div className="space-y-1">
-              <label className="text-xs font-medium text-slate-400">Google Public Share URL</label>
+              <label className="text-xs font-semibold text-slate-700">Google Public Share URL</label>
               <input
                 type="text"
                 value={gdriveLink}
                 onChange={(e) => setGdriveLink(e.target.value)}
                 placeholder="https://docs.google.com/document/d/... or drive.google.com/file/d/..."
-                className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3.5 py-2 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500 font-mono"
+                className="w-full bg-white border border-slate-300 rounded-xl px-3.5 py-2 text-xs text-slate-900 placeholder-slate-400 focus:outline-none focus:border-indigo-500 font-mono shadow-2xs"
               />
             </div>
           </div>
 
           <div className="space-y-1">
-            <label className="text-xs font-medium text-slate-400 flex items-center justify-between">
+            <label className="text-xs font-semibold text-slate-700 flex items-center justify-between">
               <span>Optional Key Takeaways / Note Summary (Indexed for Student AI Tutor & Quizzes)</span>
               <span className="text-[10px] text-slate-500">Public or Private Docs</span>
             </label>
@@ -1049,20 +1049,20 @@ export const TeacherPortal: React.FC<Props> = ({
               value={gdriveSummary}
               onChange={(e) => setGdriveSummary(e.target.value)}
               placeholder="e.g. Topics covered: IAM Policies, VPC Peering, S3 Bucket Encryption, and Auto-Scaling groups."
-              className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3.5 py-2 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500 resize-none"
+              className="w-full bg-white border border-slate-300 rounded-xl px-3.5 py-2 text-xs text-slate-900 placeholder-slate-400 focus:outline-none focus:border-indigo-500 resize-none shadow-2xs"
             />
           </div>
 
-          <div className="flex items-center justify-between pt-2 border-t border-slate-800/80 flex-wrap gap-3">
-            <div className="text-[11px] text-slate-400">
-              Assigned to: <span className="text-indigo-300 font-semibold">{effectiveSubject}</span> &gt; <span className="text-amber-400 font-semibold">{effectiveUnit}</span>
+          <div className="flex items-center justify-between pt-2 border-t border-slate-100 flex-wrap gap-3">
+            <div className="text-[11px] text-slate-600">
+              Assigned to: <span className="text-indigo-600 font-bold">{effectiveSubject}</span> &gt; <span className="text-amber-600 font-bold">{effectiveUnit}</span>
             </div>
 
             <button
               type="button"
               onClick={handleGdriveImport}
               disabled={gdriveImporting || !gdriveLink.trim()}
-              className="px-5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs flex items-center gap-2 transition-all shadow-md cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+              className="px-5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs flex items-center gap-2 transition-all shadow-xs cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {gdriveImporting ? (
                 <>
@@ -1081,46 +1081,46 @@ export const TeacherPortal: React.FC<Props> = ({
 
         {/* Global Modal Overlay During Upload to prevent any repeated clicks anywhere */}
         {effectiveUploading && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 backdrop-blur-md p-4 animate-in fade-in duration-200">
-            <div className="bg-[#18181e] border-2 border-amber-500/80 rounded-3xl p-6 sm:p-8 max-w-md w-full shadow-2xl flex flex-col items-center text-center space-y-4">
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-xs p-4 animate-in fade-in duration-200">
+            <div className="bg-white border-2 border-amber-500 rounded-3xl p-6 sm:p-8 max-w-md w-full shadow-2xl flex flex-col items-center text-center space-y-4">
               <div className="relative w-16 h-16 flex items-center justify-center">
-                <div className="absolute inset-0 rounded-full border-4 border-amber-500/20 border-t-amber-400 animate-spin" />
-                <Upload className="w-7 h-7 text-amber-400 animate-pulse" />
+                <div className="absolute inset-0 rounded-full border-4 border-amber-500/20 border-t-amber-500 animate-spin" />
+                <Upload className="w-7 h-7 text-amber-500 animate-pulse" />
               </div>
 
               <div>
-                <h3 className="text-base sm:text-lg font-extrabold text-white">
+                <h3 className="text-base sm:text-lg font-extrabold text-slate-900">
                   Uploading & Processing Document
                 </h3>
-                <p className="text-xs text-slate-300 mt-1 truncate max-w-[320px]">
+                <p className="text-xs text-slate-600 mt-1 truncate max-w-[320px]">
                   {selectedFile?.name || "Note file"}
                 </p>
               </div>
 
               <div className="w-full space-y-2">
-                <div className="w-full bg-slate-900 rounded-full h-3 overflow-hidden border border-slate-700/80 p-0.5">
+                <div className="w-full bg-slate-100 rounded-full h-3 overflow-hidden border border-slate-200 p-0.5">
                   <div 
                     className="bg-gradient-to-r from-amber-500 via-amber-400 to-emerald-400 h-full rounded-full transition-all duration-300"
                     style={{ width: `${uploadPercent}%` }}
                   />
                 </div>
                 <div className="flex items-center justify-between text-xs font-mono">
-                  <span className="text-amber-400 font-bold">{uploadPercent}% completed</span>
-                  <span className="text-slate-400">{effectiveUnit}</span>
+                  <span className="text-amber-600 font-bold">{uploadPercent}% completed</span>
+                  <span className="text-slate-500">{effectiveUnit}</span>
                 </div>
               </div>
 
-              <div className="text-xs text-slate-300 bg-slate-900/90 p-3 rounded-2xl border border-slate-800 w-full text-left space-y-1.5">
-                <div className="flex items-center gap-2 text-amber-300 font-bold">
-                  <span className="w-2 h-2 rounded-full bg-amber-400 animate-ping" />
+              <div className="text-xs text-slate-700 bg-slate-50 p-3 rounded-2xl border border-slate-200 w-full text-left space-y-1.5">
+                <div className="flex items-center gap-2 text-amber-600 font-bold">
+                  <span className="w-2 h-2 rounded-full bg-amber-500 animate-ping" />
                   <span>Current Step:</span>
                 </div>
-                <div className="text-slate-300 text-xs pl-4 font-mono">
+                <div className="text-slate-700 text-xs pl-4 font-mono">
                   {uploadStage || "Processing document & extracting slides..."}
                 </div>
               </div>
 
-              <div className="bg-amber-500/10 border border-amber-500/30 rounded-2xl p-3 text-[11px] text-amber-200/90 leading-relaxed text-left">
+              <div className="bg-amber-50 border border-amber-200 rounded-2xl p-3 text-[11px] text-amber-900 leading-relaxed text-left">
                 <strong>Please wait:</strong> The teacher studio is parsing your lecture notes, rasterizing presentation slides, and generating AI search embeddings. <strong>Do not click upload again or close this window.</strong>
               </div>
             </div>
@@ -1128,20 +1128,20 @@ export const TeacherPortal: React.FC<Props> = ({
         )}
 
         {/* Teacher Class Announcements & Notice Board */}
-        <div className="bg-slate-900/90 border border-slate-800 rounded-3xl p-6 shadow-xl space-y-4">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-800 pb-3">
+        <div className="bg-white border border-slate-200 rounded-3xl p-6 shadow-xs space-y-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 pb-3">
             <div>
-              <h2 className="text-base font-bold text-white flex items-center gap-2">
-                <Bell className="w-4 h-4 text-amber-400" /> Course Announcements & Exam Alerts
+              <h2 className="text-base font-bold text-slate-900 flex items-center gap-2">
+                <Bell className="w-4 h-4 text-amber-500" /> Course Announcements & Exam Alerts
               </h2>
-              <p className="text-xs text-slate-400 mt-0.5">
+              <p className="text-xs text-slate-500 mt-0.5">
                 Broadcast reading reminders and unit exam alerts directly to students.
               </p>
             </div>
 
             <button
               onClick={() => setShowAnnounceForm(!showAnnounceForm)}
-              className="px-3 py-1.5 rounded-xl bg-purple-500/20 hover:bg-purple-500/30 text-purple-300 border border-purple-500/30 text-xs font-semibold flex items-center gap-1.5 transition-all self-start sm:self-auto cursor-pointer"
+              className="px-3 py-1.5 rounded-xl bg-purple-50 hover:bg-purple-100 text-purple-700 border border-purple-200 text-xs font-semibold flex items-center gap-1.5 transition-all self-start sm:self-auto cursor-pointer"
             >
               <Plus className="w-3.5 h-3.5" />
               <span>{showAnnounceForm ? "Cancel Notice" : "+ New Announcement"}</span>
@@ -1150,10 +1150,10 @@ export const TeacherPortal: React.FC<Props> = ({
 
           {/* Announcement Creation Form */}
           {showAnnounceForm && (
-            <form onSubmit={handlePostAnnouncement} className="bg-slate-950/70 border border-purple-500/30 rounded-2xl p-4 space-y-3 animate-fadeIn">
+            <form onSubmit={handlePostAnnouncement} className="bg-purple-50/40 border border-purple-200 rounded-2xl p-4 space-y-3 animate-fadeIn">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-medium text-slate-400 mb-1">
+                  <label className="block text-xs font-semibold text-slate-700 mb-1">
                     Announcement Headline
                   </label>
                   <input
@@ -1162,18 +1162,18 @@ export const TeacherPortal: React.FC<Props> = ({
                     value={newAnnTitle}
                     onChange={(e) => setNewAnnTitle(e.target.value)}
                     placeholder="e.g. Unit 2 Exam Alert: Para-Virtualization vs Full Virtualization"
-                    className="w-full bg-slate-900 border border-slate-800 rounded-xl px-3 py-2 text-xs text-slate-100 placeholder-slate-500 focus:outline-none focus:border-purple-500"
+                    className="w-full bg-white border border-slate-300 rounded-xl px-3 py-2 text-xs text-slate-900 placeholder-slate-400 focus:outline-none focus:border-purple-500 shadow-2xs"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-xs font-medium text-slate-400 mb-1">
+                  <label className="block text-xs font-semibold text-slate-700 mb-1">
                     Link to Course Note (Optional)
                   </label>
                   <select
                     value={newAnnRelatedDoc}
                     onChange={(e) => setNewAnnRelatedDoc(e.target.value)}
-                    className="w-full bg-slate-900 border border-slate-800 rounded-xl px-3 py-2 text-xs text-slate-100 focus:outline-none focus:border-purple-500"
+                    className="w-full bg-white border border-slate-300 rounded-xl px-3 py-2 text-xs text-slate-900 focus:outline-none focus:border-purple-500 shadow-2xs"
                   >
                     <option value="">-- No Note Linked --</option>
                     {(documents || []).map(d => (
@@ -1186,7 +1186,7 @@ export const TeacherPortal: React.FC<Props> = ({
               </div>
 
               <div>
-                <label className="block text-xs font-medium text-slate-400 mb-1">
+                <label className="block text-xs font-semibold text-slate-700 mb-1">
                   Message Content
                 </label>
                 <textarea
@@ -1195,24 +1195,24 @@ export const TeacherPortal: React.FC<Props> = ({
                   value={newAnnContent}
                   onChange={(e) => setNewAnnContent(e.target.value)}
                   placeholder="e.g. Please review Page 2 of Virtualization Concepts before Thursday's lecture."
-                  className="w-full bg-slate-900 border border-slate-800 rounded-xl p-3 text-xs text-slate-100 placeholder-slate-500 focus:outline-none focus:border-purple-500"
+                  className="w-full bg-white border border-slate-300 rounded-xl p-3 text-xs text-slate-900 placeholder-slate-400 focus:outline-none focus:border-purple-500 shadow-2xs"
                 />
               </div>
 
               <div className="flex items-center justify-between pt-1">
-                <label className="flex items-center gap-2 text-xs text-slate-300 cursor-pointer">
+                <label className="flex items-center gap-2 text-xs text-slate-700 cursor-pointer">
                   <input
                     type="checkbox"
                     checked={newAnnImportant}
                     onChange={(e) => setNewAnnImportant(e.target.checked)}
-                    className="rounded border-slate-700 bg-slate-900 text-amber-500 focus:ring-amber-500"
+                    className="rounded border-slate-300 bg-white text-amber-600 focus:ring-amber-500"
                   />
                   <span>Mark as High-Priority / Highlighted Alert</span>
                 </label>
 
                 <button
                   type="submit"
-                  className="px-4 py-2 rounded-xl bg-purple-600 hover:bg-purple-500 text-white font-bold text-xs transition-all shadow-md cursor-pointer"
+                  className="px-4 py-2 rounded-xl bg-purple-600 hover:bg-purple-700 text-white font-bold text-xs transition-all shadow-xs cursor-pointer"
                 >
                   Post Announcement
                 </button>
@@ -1225,29 +1225,29 @@ export const TeacherPortal: React.FC<Props> = ({
             {(announcements || []).map((ann) => (
               <div 
                 key={ann.id}
-                className="p-3.5 bg-slate-950/60 border border-slate-800 rounded-xl flex flex-col justify-between gap-2"
+                className="p-3.5 bg-slate-50 border border-slate-200 rounded-xl flex flex-col justify-between gap-2 shadow-2xs"
               >
                 <div>
                   <div className="flex items-start justify-between gap-2">
-                    <h4 className="text-xs font-bold text-white flex items-center gap-1.5">
-                      {ann.important && <AlertCircle className="w-3.5 h-3.5 text-amber-400 shrink-0" />}
+                    <h4 className="text-xs font-bold text-slate-900 flex items-center gap-1.5">
+                      {ann.important && <AlertCircle className="w-3.5 h-3.5 text-amber-500 shrink-0" />}
                       {ann.title}
                     </h4>
                     <button
                       onClick={() => onDeleteAnnouncement(ann.id)}
-                      className="text-slate-500 hover:text-rose-400 p-1 transition-colors"
+                      className="text-slate-400 hover:text-rose-600 p-1 transition-colors cursor-pointer"
                       title="Delete announcement"
                     >
                       <Trash2 className="w-3.5 h-3.5" />
                     </button>
                   </div>
-                  <p className="text-xs text-slate-300 mt-1 leading-relaxed">{ann.content}</p>
+                  <p className="text-xs text-slate-600 mt-1 leading-relaxed">{ann.content}</p>
                 </div>
 
-                <div className="flex items-center justify-between text-[10px] text-slate-400 border-t border-slate-800/80 pt-2">
+                <div className="flex items-center justify-between text-[10px] text-slate-500 border-t border-slate-200/80 pt-2">
                   <span>By {ann.author} • {ann.date}</span>
                   {ann.relatedDocTitle && (
-                    <span className="text-amber-400 font-medium truncate max-w-[140px]">
+                    <span className="text-amber-700 font-semibold truncate max-w-[140px]">
                       Linked: {ann.relatedDocTitle}
                     </span>
                   )}
@@ -1261,10 +1261,10 @@ export const TeacherPortal: React.FC<Props> = ({
         <div className="space-y-5">
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
             <div>
-              <h2 className="text-xl font-bold text-white flex items-center gap-2">
-                <HardDrive className="w-5 h-5 text-amber-400" /> Course Notes Library ({filteredDocs.length})
+              <h2 className="text-xl font-bold text-slate-900 flex items-center gap-2">
+                <HardDrive className="w-5 h-5 text-amber-500" /> Course Notes Library ({filteredDocs.length})
               </h2>
-              <p className="text-xs text-slate-400 mt-0.5">
+              <p className="text-xs text-slate-500 mt-0.5">
                 Organized Subject-wise and Unit-wise. Toggle visibility, edit metadata, duplicate, reorder units, or merge notes.
               </p>
             </div>
@@ -1272,13 +1272,13 @@ export const TeacherPortal: React.FC<Props> = ({
             {/* View Mode Switcher + Merge + Search */}
             <div className="flex items-center gap-2 flex-wrap">
               {/* Layout Switcher */}
-              <div className="bg-slate-900 border border-slate-800 rounded-xl p-1 flex items-center gap-1">
+              <div className="bg-slate-100 border border-slate-200 rounded-xl p-1 flex items-center gap-1 shadow-2xs">
                 <button
                   onClick={() => setViewLayout("curriculum")}
                   className={`px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer ${
                     viewLayout === "curriculum"
-                      ? "bg-purple-600 text-white shadow-sm"
-                      : "text-slate-400 hover:text-white"
+                      ? "bg-purple-600 text-white shadow-xs"
+                      : "text-slate-600 hover:text-slate-900"
                   }`}
                   title="Curriculum Unit View (Grouped by Subject & Unit)"
                 >
@@ -1289,8 +1289,8 @@ export const TeacherPortal: React.FC<Props> = ({
                   onClick={() => setViewLayout("grid")}
                   className={`px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer ${
                     viewLayout === "grid"
-                      ? "bg-amber-500 text-slate-950 shadow-sm"
-                      : "text-slate-400 hover:text-white"
+                      ? "bg-amber-500 text-slate-950 shadow-xs"
+                      : "text-slate-600 hover:text-slate-900"
                   }`}
                   title="All Notes Flat Grid View"
                 >
@@ -1305,10 +1305,10 @@ export const TeacherPortal: React.FC<Props> = ({
                   setIsMergeMode(!isMergeMode);
                   setSelectedForMerge([]);
                 }}
-                className={`px-3 py-2 rounded-xl text-xs font-semibold border flex items-center gap-1.5 transition-all cursor-pointer ${
+                className={`px-3 py-2 rounded-xl text-xs font-semibold border flex items-center gap-1.5 transition-all cursor-pointer shadow-2xs ${
                   isMergeMode
                     ? "bg-amber-500 text-slate-950 border-amber-400 font-bold"
-                    : "bg-slate-900 hover:bg-slate-800 text-slate-300 border-slate-800"
+                    : "bg-white hover:bg-slate-50 text-slate-700 border-slate-200"
                 }`}
               >
                 <GitMerge className="w-3.5 h-3.5" />
@@ -1318,10 +1318,10 @@ export const TeacherPortal: React.FC<Props> = ({
               {documents.length > 0 && (
                 <button
                   onClick={() => setShowResetConfirm(true)}
-                  className="px-3 py-2 rounded-xl text-xs font-semibold border flex items-center gap-1.5 transition-all cursor-pointer bg-rose-950/30 hover:bg-rose-900/50 text-rose-300 border-rose-800/60"
+                  className="px-3 py-2 rounded-xl text-xs font-semibold border flex items-center gap-1.5 transition-all cursor-pointer bg-rose-50 hover:bg-rose-100 text-rose-700 border-rose-200 shadow-2xs"
                   title="Clear all uploaded documents from the portal"
                 >
-                  <Trash2 className="w-3.5 h-3.5 text-rose-400" />
+                  <Trash2 className="w-3.5 h-3.5 text-rose-500" />
                   <span>Clear All Files ({documents.length})</span>
                 </button>
               )}
@@ -1334,7 +1334,7 @@ export const TeacherPortal: React.FC<Props> = ({
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   placeholder="Search subject, unit, topic..."
-                  className="w-full bg-slate-900 border border-slate-800 rounded-xl pl-9 pr-3 py-2 text-xs text-slate-100 placeholder-slate-500 focus:outline-none focus:border-amber-500"
+                  className="w-full bg-white border border-slate-300 rounded-xl pl-9 pr-3 py-2 text-xs text-slate-900 placeholder-slate-400 focus:outline-none focus:border-amber-500 shadow-2xs"
                 />
               </div>
             </div>
@@ -1342,12 +1342,12 @@ export const TeacherPortal: React.FC<Props> = ({
 
           {/* Merge Toolbar (when active) */}
           {isMergeMode && (
-            <div className="bg-amber-950/30 border border-amber-500/40 rounded-2xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 animate-fadeIn">
+            <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 animate-fadeIn shadow-xs">
               <div className="space-y-1">
-                <div className="text-xs font-bold text-amber-300 flex items-center gap-2">
-                  <GitMerge className="w-4 h-4" /> Multi-Note Merge Mode
+                <div className="text-xs font-bold text-amber-900 flex items-center gap-2">
+                  <GitMerge className="w-4 h-4 text-amber-600" /> Multi-Note Merge Mode
                 </div>
-                <div className="text-xs text-slate-300">
+                <div className="text-xs text-slate-600">
                   Selected {selectedForMerge.length} documents to combine into one comprehensive course master guide.
                 </div>
               </div>
@@ -1358,15 +1358,15 @@ export const TeacherPortal: React.FC<Props> = ({
                   value={mergedGuideTitle}
                   onChange={(e) => setMergedGuideTitle(e.target.value)}
                   placeholder="Merged Guide Title"
-                  className="bg-slate-900 border border-amber-500/40 rounded-xl px-3 py-1.5 text-xs text-white focus:outline-none w-60"
+                  className="bg-white border border-amber-300 rounded-xl px-3 py-1.5 text-xs text-slate-900 focus:outline-none focus:border-amber-500 w-60 shadow-2xs"
                 />
                 <button
                   onClick={handleExecuteMerge}
                   disabled={selectedForMerge.length < 2}
                   className={`px-4 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
                     selectedForMerge.length < 2
-                      ? "bg-slate-800 text-slate-500 cursor-not-allowed"
-                      : "bg-amber-500 hover:bg-amber-400 text-slate-950 shadow-md"
+                      ? "bg-slate-200 text-slate-400 cursor-not-allowed"
+                      : "bg-amber-500 hover:bg-amber-400 text-slate-950 shadow-xs"
                   }`}
                 >
                   Merge Now
@@ -1376,18 +1376,18 @@ export const TeacherPortal: React.FC<Props> = ({
           )}
 
           {/* Filter Bar: Subject & Unit Filters */}
-          <div className="space-y-2 bg-slate-900/60 border border-slate-800/80 rounded-2xl p-3.5">
+          <div className="space-y-2 bg-white border border-slate-200 rounded-2xl p-3.5 shadow-2xs">
             {/* Row 1: Subject Filters */}
             <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none">
-              <span className="text-[11px] font-bold text-slate-400 shrink-0 flex items-center gap-1">
-                <Folder className="w-3.5 h-3.5 text-purple-400" /> Subject:
+              <span className="text-[11px] font-bold text-slate-500 shrink-0 flex items-center gap-1">
+                <Folder className="w-3.5 h-3.5 text-purple-600" /> Subject:
               </span>
               <button
                 onClick={() => setSelectedSubjectFilter("all")}
                 className={`px-3 py-1 rounded-xl text-xs font-semibold transition-all shrink-0 cursor-pointer ${
                   selectedSubjectFilter === "all"
-                    ? "bg-purple-600 text-white font-bold shadow-sm"
-                    : "bg-slate-950 text-slate-400 hover:text-white border border-slate-800"
+                    ? "bg-purple-600 text-white font-bold shadow-xs"
+                    : "bg-slate-100 text-slate-600 hover:text-slate-900 hover:bg-slate-200 border border-slate-200"
                 }`}
               >
                 All Subjects ({documents.length})
@@ -1400,8 +1400,8 @@ export const TeacherPortal: React.FC<Props> = ({
                     onClick={() => setSelectedSubjectFilter(subj)}
                     className={`px-3 py-1 rounded-xl text-xs font-semibold transition-all shrink-0 cursor-pointer ${
                       selectedSubjectFilter === subj
-                        ? "bg-purple-600 text-white font-bold shadow-sm"
-                        : "bg-slate-950 text-slate-400 hover:text-white border border-slate-800"
+                        ? "bg-purple-600 text-white font-bold shadow-xs"
+                        : "bg-slate-100 text-slate-600 hover:text-slate-900 hover:bg-slate-200 border border-slate-200"
                     }`}
                   >
                     {subj} ({count})
@@ -1411,16 +1411,16 @@ export const TeacherPortal: React.FC<Props> = ({
             </div>
 
             {/* Row 2: Unit Filters */}
-            <div className="flex items-center gap-2 overflow-x-auto pt-1 border-t border-slate-800/60 scrollbar-none">
-              <span className="text-[11px] font-bold text-slate-400 shrink-0 flex items-center gap-1">
-                <BookMarked className="w-3.5 h-3.5 text-amber-400" /> Unit:
+            <div className="flex items-center gap-2 overflow-x-auto pt-1 border-t border-slate-100 scrollbar-none">
+              <span className="text-[11px] font-bold text-slate-500 shrink-0 flex items-center gap-1">
+                <BookMarked className="w-3.5 h-3.5 text-amber-500" /> Unit:
               </span>
               <button
                 onClick={() => setSelectedUnitFilter("all")}
                 className={`px-2.5 py-0.5 rounded-lg text-xs font-semibold transition-all shrink-0 cursor-pointer ${
                   selectedUnitFilter === "all"
                     ? "bg-amber-500 text-slate-950 font-bold shadow-xs"
-                    : "bg-slate-950 text-slate-400 hover:text-white border border-slate-800"
+                    : "bg-slate-100 text-slate-600 hover:text-slate-900 hover:bg-slate-200 border border-slate-200"
                 }`}
               >
                 All Units
@@ -1434,7 +1434,7 @@ export const TeacherPortal: React.FC<Props> = ({
                     className={`px-2.5 py-0.5 rounded-lg text-xs font-semibold transition-all shrink-0 cursor-pointer ${
                       selectedUnitFilter === u
                         ? "bg-amber-500 text-slate-950 font-bold shadow-xs"
-                        : "bg-slate-950 text-slate-400 hover:text-white border border-slate-800"
+                        : "bg-slate-100 text-slate-600 hover:text-slate-900 hover:bg-slate-200 border border-slate-200"
                     }`}
                   >
                     {u} ({count})
@@ -1448,10 +1448,10 @@ export const TeacherPortal: React.FC<Props> = ({
           {viewLayout === "curriculum" ? (
             <div className="space-y-6">
               {Object.keys(groupedBySubject).length === 0 ? (
-                <div className="bg-slate-900/60 border border-slate-800 rounded-2xl p-12 text-center space-y-3">
-                  <Folder className="w-10 h-10 text-slate-600 mx-auto" />
-                  <h3 className="text-base font-bold text-white">No notes matching your filters</h3>
-                  <p className="text-xs text-slate-400 max-w-md mx-auto">
+                <div className="bg-white border border-slate-200 rounded-2xl p-12 text-center space-y-3 shadow-xs">
+                  <Folder className="w-10 h-10 text-slate-400 mx-auto" />
+                  <h3 className="text-base font-bold text-slate-900">No notes matching your filters</h3>
+                  <p className="text-xs text-slate-500 max-w-md mx-auto">
                     Try clearing the search query or selecting "All Subjects" and "All Units".
                   </p>
                 </div>
@@ -1463,23 +1463,23 @@ export const TeacherPortal: React.FC<Props> = ({
                   return (
                     <div 
                       key={subjectName}
-                      className="bg-slate-900/80 border border-slate-800 rounded-3xl overflow-hidden shadow-lg"
+                      className="bg-white border border-slate-200 rounded-3xl overflow-hidden shadow-xs"
                     >
                       {/* Subject Section Header Banner */}
                       <div 
                         onClick={() => toggleSubjectCollapse(subjectName)}
-                        className="p-4 sm:p-5 bg-gradient-to-r from-slate-900 to-slate-950 border-b border-slate-800 flex items-center justify-between cursor-pointer hover:bg-slate-800/40 transition-colors select-none"
+                        className="p-4 sm:p-5 bg-slate-50/80 border-b border-slate-200 flex items-center justify-between cursor-pointer hover:bg-slate-100/70 transition-colors select-none"
                       >
                         <div className="flex items-center gap-3">
-                          <button className="p-1 rounded-lg bg-slate-800 text-slate-300">
+                          <button className="p-1 rounded-lg bg-white border border-slate-200 text-slate-600 shadow-2xs">
                             {isCollapsed ? <ChevronRight className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
                           </button>
                           <div>
                             <div className="flex items-center gap-2">
-                              <span className="px-2.5 py-0.5 rounded-lg bg-purple-500/20 text-purple-300 border border-purple-500/30 text-xs font-bold">
+                              <span className="px-2.5 py-0.5 rounded-lg bg-purple-100 text-purple-700 border border-purple-200 text-xs font-bold">
                                 {subjectName}
                               </span>
-                              <span className="text-xs text-slate-400 font-mono">
+                              <span className="text-xs text-slate-500 font-mono">
                                 ({subjectDocCount} {subjectDocCount === 1 ? "Note" : "Notes"} across {Object.keys(unitsMap).length} {Object.keys(unitsMap).length === 1 ? "Unit" : "Units"})
                               </span>
                             </div>
@@ -1490,7 +1490,7 @@ export const TeacherPortal: React.FC<Props> = ({
                         <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
                           <button
                             onClick={() => handlePresetUploadForSubjectAndUnit(subjectName, "Unit 1")}
-                            className="px-3 py-1.5 bg-purple-500/15 hover:bg-purple-500/25 text-purple-300 border border-purple-500/30 rounded-xl text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer"
+                            className="px-3 py-1.5 bg-purple-50 hover:bg-purple-100 text-purple-700 border border-purple-200 rounded-xl text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer shadow-2xs"
                             title={`Upload note directly to ${subjectName}`}
                           >
                             <Plus className="w-3.5 h-3.5" />
@@ -1505,18 +1505,18 @@ export const TeacherPortal: React.FC<Props> = ({
                           {Object.entries(unitsMap).map(([unitName, unitDocs]) => (
                             <div key={unitName} className="space-y-3">
                               {/* Unit Sub-Header */}
-                              <div className="flex items-center justify-between border-b border-slate-800/80 pb-2 flex-wrap gap-2">
+                              <div className="flex items-center justify-between border-b border-slate-200 pb-2 flex-wrap gap-2">
                                 <div className="flex items-center gap-2">
-                                  <span className="px-2.5 py-0.5 rounded-md bg-amber-500/15 text-amber-300 border border-amber-500/30 text-xs font-extrabold flex items-center gap-1.5">
+                                  <span className="px-2.5 py-0.5 rounded-md bg-amber-50 text-amber-800 border border-amber-200 text-xs font-extrabold flex items-center gap-1.5">
                                     <BookMarked className="w-3.5 h-3.5" />
                                     {unitName}
                                   </span>
                                   {unitDocs[0]?.unitTitle && (
-                                    <span className="text-xs font-semibold text-slate-200">
+                                    <span className="text-xs font-semibold text-slate-700">
                                       {unitDocs[0].unitTitle}
                                     </span>
                                   )}
-                                  <span className="text-[11px] text-slate-500 font-mono">
+                                  <span className="text-[11px] text-slate-400 font-mono">
                                     ({unitDocs.length} {unitDocs.length === 1 ? "Note" : "Notes"})
                                   </span>
                                 </div>
@@ -1524,16 +1524,16 @@ export const TeacherPortal: React.FC<Props> = ({
                                 <div className="flex items-center gap-2.5">
                                   <button
                                     onClick={() => onSelectDocument(`all-unit-${unitName}`)}
-                                    className="px-2 py-0.5 rounded-md bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 border border-amber-500/30 text-[11px] font-bold transition-all flex items-center gap-1 cursor-pointer"
+                                    className="px-2 py-0.5 rounded-md bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-300 text-[11px] font-bold transition-all flex items-center gap-1 cursor-pointer"
                                     title={`View all ${unitName} notes in combined sequence`}
                                   >
-                                    <Layers className="w-3 h-3 text-amber-400" />
+                                    <Layers className="w-3 h-3 text-amber-600" />
                                     <span>All {unitName} Notes</span>
                                   </button>
 
                                   <button
                                     onClick={() => handlePresetUploadForSubjectAndUnit(subjectName, unitName)}
-                                    className="text-[11px] text-amber-400 hover:text-amber-300 font-medium flex items-center gap-1 cursor-pointer hover:underline"
+                                    className="text-[11px] text-amber-600 hover:text-amber-700 font-medium flex items-center gap-1 cursor-pointer hover:underline"
                                   >
                                     <Plus className="w-3 h-3" /> Add to {unitName}
                                   </button>
@@ -1550,12 +1550,12 @@ export const TeacherPortal: React.FC<Props> = ({
                                   return (
                                     <div
                                       key={doc.id}
-                                      className={`bg-slate-950/70 border rounded-2xl p-4 sm:p-5 transition-all flex flex-col justify-between gap-3.5 relative group ${
+                                      className={`bg-white border rounded-2xl p-4 sm:p-5 transition-all flex flex-col justify-between gap-3.5 relative group shadow-2xs hover:shadow-xs ${
                                         isSelectedForMerge
-                                          ? "border-amber-500 bg-amber-950/20"
+                                          ? "border-amber-500 bg-amber-50/40"
                                           : isPublished
-                                          ? "border-slate-800 hover:border-purple-500/50"
-                                          : "border-slate-800/80 bg-slate-950/90 opacity-80"
+                                          ? "border-slate-200 hover:border-purple-300"
+                                          : "border-slate-200 bg-slate-50/60 opacity-80"
                                       }`}
                                     >
                                       <div className="space-y-2.5">
@@ -1567,7 +1567,7 @@ export const TeacherPortal: React.FC<Props> = ({
                                                 type="checkbox"
                                                 checked={isSelectedForMerge}
                                                 onChange={() => handleToggleMergeDoc(doc.id)}
-                                                className="rounded border-slate-700 bg-slate-900 text-amber-500 focus:ring-amber-500 w-4 h-4 cursor-pointer mr-1"
+                                                className="rounded border-slate-300 bg-white text-amber-600 focus:ring-amber-500 w-4 h-4 cursor-pointer mr-1"
                                               />
                                             )}
                                             
@@ -1575,7 +1575,7 @@ export const TeacherPortal: React.FC<Props> = ({
                                             {getDocFormatBadge(doc)}
 
                                             {/* Subject Badge */}
-                                            <span className="px-2 py-0.5 rounded-lg bg-purple-500/15 text-purple-300 border border-purple-500/30 text-[10px] font-bold">
+                                            <span className="px-2 py-0.5 rounded-lg bg-purple-50 text-purple-700 border border-purple-200 text-[10px] font-bold">
                                               {doc.subject?.trim() || "General Studies"}
                                             </span>
 
@@ -1584,18 +1584,18 @@ export const TeacherPortal: React.FC<Props> = ({
                                               <select
                                                 value={doc.unit || "Unit 1"}
                                                 onChange={(e) => handleQuickMoveUnit(doc, e.target.value)}
-                                                className="bg-amber-500/15 border border-amber-500/30 text-amber-300 text-[10px] font-bold rounded-lg px-2 py-0.5 focus:outline-none focus:border-amber-400 cursor-pointer appearance-none pr-5"
+                                                className="bg-amber-50 border border-amber-200 text-amber-800 text-[10px] font-bold rounded-lg px-2 py-0.5 focus:outline-none focus:border-amber-400 cursor-pointer appearance-none pr-5"
                                                 title="Quick change Unit"
                                               >
                                                 {["Unit 1", "Unit 2", "Unit 3", "Unit 4", "Unit 5", "Unit 6", "Lab Manual", ...allUnits.filter(u => !["Unit 1", "Unit 2", "Unit 3", "Unit 4", "Unit 5", "Unit 6", "Lab Manual"].includes(u))].map(u => (
-                                                  <option key={u} value={u} className="bg-slate-900 text-white">{u}</option>
+                                                  <option key={u} value={u} className="bg-white text-slate-900">{u}</option>
                                                 ))}
                                               </select>
-                                              <ChevronDown className="w-3 h-3 text-amber-400 absolute right-1.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+                                              <ChevronDown className="w-3 h-3 text-amber-600 absolute right-1.5 top-1/2 -translate-y-1/2 pointer-events-none" />
                                             </div>
 
                                             {doc.courseCode && (
-                                              <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded bg-slate-800 text-slate-400">
+                                              <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded bg-slate-100 text-slate-600 border border-slate-200">
                                                 {doc.courseCode}
                                               </span>
                                             )}
@@ -1606,8 +1606,8 @@ export const TeacherPortal: React.FC<Props> = ({
                                             onClick={() => onTogglePublishDocument(doc.id)}
                                             className={`px-2.5 py-0.5 rounded-lg text-[11px] font-bold flex items-center gap-1.5 transition-all border cursor-pointer ${
                                               isPublished
-                                                ? "bg-emerald-500/20 border-emerald-500/40 text-emerald-400 hover:bg-emerald-500/30"
-                                                : "bg-amber-500/20 border-amber-500/40 text-amber-300 hover:bg-amber-500/30"
+                                                ? "bg-emerald-50 border-emerald-200 text-emerald-700 hover:bg-emerald-100"
+                                                : "bg-amber-50 border-amber-200 text-amber-800 hover:bg-amber-100"
                                             }`}
                                             title="Click to toggle visibility for students"
                                           >
@@ -1626,17 +1626,17 @@ export const TeacherPortal: React.FC<Props> = ({
                                         </div>
 
                                         {/* Title */}
-                                        <h3 className="text-sm font-bold text-white group-hover:text-amber-400 transition-colors line-clamp-2">
+                                        <h3 className="text-sm font-bold text-slate-900 group-hover:text-amber-600 transition-colors line-clamp-2">
                                           {doc.title}
                                         </h3>
 
                                         {/* Description */}
-                                        <p className="text-xs text-slate-400 line-clamp-2 leading-relaxed">
+                                        <p className="text-xs text-slate-600 line-clamp-2 leading-relaxed">
                                           {doc.description || "Course study document formatted for student reading and AI Q&A."}
                                         </p>
 
                                         {/* Metadata */}
-                                        <div className="flex items-center gap-2.5 text-[11px] text-slate-400 font-mono pt-1">
+                                        <div className="flex items-center gap-2.5 text-[11px] text-slate-500 font-mono pt-1">
                                           <span>{doc.pageCount || doc.sections.length} Pages</span>
                                           <span>•</span>
                                           <span>By {doc.uploadedBy || "Instructor"}</span>
@@ -1646,25 +1646,25 @@ export const TeacherPortal: React.FC<Props> = ({
                                       </div>
 
                                       {/* Bottom Teacher Action Bar */}
-                                      <div className="pt-2.5 border-t border-slate-800/80 flex items-center justify-between gap-2 text-xs flex-wrap">
+                                      <div className="pt-2.5 border-t border-slate-100 flex items-center justify-between gap-2 text-xs flex-wrap">
                                         <div className="flex items-center gap-1">
                                           <button
                                             onClick={() => handleOpenEdit(doc)}
-                                            className="p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white transition-colors cursor-pointer"
+                                            className="p-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-600 hover:text-slate-900 transition-colors cursor-pointer"
                                             title="Edit Subject, Unit & Title"
                                           >
                                             <Edit3 className="w-3.5 h-3.5" />
                                           </button>
                                           <button
                                             onClick={() => onDuplicateDocument(doc.id)}
-                                            className="p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white transition-colors cursor-pointer"
+                                            className="p-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-600 hover:text-slate-900 transition-colors cursor-pointer"
                                             title="Duplicate Note"
                                           >
                                             <Copy className="w-3.5 h-3.5" />
                                           </button>
                                           <button
                                             onClick={() => setShowDeleteConfirmId(doc.id)}
-                                            className="p-1.5 rounded-lg bg-slate-800 hover:bg-rose-950/60 text-slate-400 hover:text-rose-400 transition-colors cursor-pointer"
+                                            className="p-1.5 rounded-lg bg-slate-100 hover:bg-rose-50 text-slate-500 hover:text-rose-600 transition-colors cursor-pointer"
                                             title="Permanently Delete Note and Remove from ChromaDB"
                                           >
                                             <Trash2 className="w-3.5 h-3.5" />
@@ -1677,7 +1677,7 @@ export const TeacherPortal: React.FC<Props> = ({
                                               href={doc.downloadUrl || doc.originalFileUrl || `/api/download/${doc.id}`}
                                               download={doc.originalFileName || `${doc.title}.pptx`}
                                               onClick={(e) => e.stopPropagation()}
-                                              className="px-2 py-1 rounded-lg bg-orange-500/10 hover:bg-orange-500/20 text-orange-400 border border-orange-500/30 text-xs font-semibold flex items-center gap-1 cursor-pointer transition-colors"
+                                              className="px-2 py-1 rounded-lg bg-orange-50 hover:bg-orange-100 text-orange-700 border border-orange-200 text-xs font-semibold flex items-center gap-1 cursor-pointer transition-colors"
                                               title="Download original PowerPoint presentation (.pptx)"
                                             >
                                               <Download className="w-3 h-3" />
@@ -1686,14 +1686,14 @@ export const TeacherPortal: React.FC<Props> = ({
                                           )}
                                           <button
                                             onClick={() => onSelectDocument(doc.id, true)}
-                                            className="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 hover:text-amber-400 text-xs font-semibold flex items-center gap-1 cursor-pointer"
+                                            className="px-2.5 py-1 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 hover:text-amber-600 text-xs font-semibold flex items-center gap-1 cursor-pointer"
                                           >
-                                            <Sparkles className="w-3 h-3 text-amber-400" />
+                                            <Sparkles className="w-3 h-3 text-amber-500" />
                                             <span>AI Tutor</span>
                                           </button>
                                           <button
                                             onClick={() => onSelectDocument(doc.id, false)}
-                                            className="px-3 py-1 rounded-lg bg-amber-500 hover:bg-amber-400 text-slate-950 text-xs font-bold flex items-center gap-1 transition-all shadow-xs cursor-pointer"
+                                            className="px-3 py-1 rounded-lg bg-amber-500 hover:bg-amber-400 text-slate-950 text-xs font-bold flex items-center gap-1 transition-all shadow-2xs cursor-pointer"
                                           >
                                             <span>{doc.fileFormat === "pptx" || doc.fileFormat === "ppt" ? "View Slides" : "Open Reader"}</span>
                                             <ArrowRight className="w-3 h-3" />
@@ -1716,13 +1716,13 @@ export const TeacherPortal: React.FC<Props> = ({
           ) : (
             /* VIEW 2: FLAT GRID VIEW */
             filteredDocs.length === 0 ? (
-              <div className="bg-slate-900/60 border border-slate-800 rounded-3xl p-12 text-center space-y-4">
-                <div className="w-14 h-14 rounded-2xl bg-amber-500/10 border border-amber-500/20 text-amber-400 flex items-center justify-center mx-auto">
+              <div className="bg-white border border-slate-200 rounded-3xl p-12 text-center space-y-4 shadow-xs">
+                <div className="w-14 h-14 rounded-2xl bg-amber-50 border border-amber-200 text-amber-600 flex items-center justify-center mx-auto">
                   <Upload className="w-7 h-7" />
                 </div>
                 <div className="space-y-1.5">
-                  <h3 className="text-lg font-bold text-white">No Course Notes in Library</h3>
-                  <p className="text-xs text-slate-400 max-w-md mx-auto leading-relaxed">
+                  <h3 className="text-lg font-bold text-slate-900">No Course Notes in Library</h3>
+                  <p className="text-xs text-slate-500 max-w-md mx-auto leading-relaxed">
                     {documents.length === 0 
                       ? "Your library is clean and ready. Upload your first PDF, Word (.docx), PowerPoint (.pptx), or Code file using the upload section above."
                       : "No notes match your current search query. Try adjusting your search."}
@@ -1738,12 +1738,12 @@ export const TeacherPortal: React.FC<Props> = ({
                 return (
                   <div
                     key={doc.id}
-                    className={`bg-slate-900/90 border rounded-2xl p-5 transition-all flex flex-col justify-between gap-4 relative group ${
+                    className={`bg-white border rounded-2xl p-5 transition-all flex flex-col justify-between gap-4 relative group shadow-2xs hover:shadow-xs ${
                       isSelectedForMerge
-                        ? "border-amber-500 bg-amber-950/20"
+                        ? "border-amber-500 bg-amber-50/40"
                         : isPublished
-                        ? "border-slate-800 hover:border-purple-500/50"
-                        : "border-slate-800/80 bg-slate-950/80 opacity-80"
+                        ? "border-slate-200 hover:border-purple-300"
+                        : "border-slate-200 bg-slate-50/60 opacity-80"
                     }`}
                   >
                     <div className="space-y-3">
@@ -1755,14 +1755,14 @@ export const TeacherPortal: React.FC<Props> = ({
                               type="checkbox"
                               checked={isSelectedForMerge}
                               onChange={() => handleToggleMergeDoc(doc.id)}
-                              className="rounded border-slate-700 bg-slate-900 text-amber-500 focus:ring-amber-500 w-4 h-4 cursor-pointer"
+                              className="rounded border-slate-300 bg-white text-amber-600 focus:ring-amber-500 w-4 h-4 cursor-pointer"
                             />
                           )}
                           {getDocFormatBadge(doc)}
-                          <span className="px-2.5 py-0.5 rounded-lg bg-purple-500/15 text-purple-300 border border-purple-500/30 text-[11px] font-bold">
+                          <span className="px-2.5 py-0.5 rounded-lg bg-purple-50 text-purple-700 border border-purple-200 text-[11px] font-bold">
                             {doc.subject?.trim() || "General Studies"}
                           </span>
-                          <span className="px-2 py-0.5 rounded-lg bg-amber-500/15 text-amber-400 border border-amber-500/30 text-[11px] font-bold">
+                          <span className="px-2 py-0.5 rounded-lg bg-amber-50 text-amber-800 border border-amber-200 text-[11px] font-bold">
                             {doc.unit?.trim() || "Unit 1"}
                           </span>
                         </div>
@@ -1772,8 +1772,8 @@ export const TeacherPortal: React.FC<Props> = ({
                           onClick={() => onTogglePublishDocument(doc.id)}
                           className={`px-2.5 py-1 rounded-lg text-[11px] font-bold flex items-center gap-1.5 transition-all border cursor-pointer ${
                             isPublished
-                              ? "bg-emerald-500/20 border-emerald-500/40 text-emerald-400 hover:bg-emerald-500/30"
-                              : "bg-amber-500/20 border-amber-500/40 text-amber-300 hover:bg-amber-500/30"
+                              ? "bg-emerald-50 border-emerald-200 text-emerald-700 hover:bg-emerald-100"
+                              : "bg-amber-50 border-amber-200 text-amber-800 hover:bg-amber-100"
                           }`}
                           title="Click to toggle visibility for students"
                         >
@@ -1792,17 +1792,17 @@ export const TeacherPortal: React.FC<Props> = ({
                       </div>
 
                       {/* Title */}
-                      <h3 className="text-base font-bold text-white group-hover:text-amber-400 transition-colors line-clamp-1">
+                      <h3 className="text-base font-bold text-slate-900 group-hover:text-amber-600 transition-colors line-clamp-1">
                         {doc.title}
                       </h3>
 
                       {/* Description */}
-                      <p className="text-xs text-slate-400 line-clamp-2 leading-relaxed">
+                      <p className="text-xs text-slate-600 line-clamp-2 leading-relaxed">
                         {doc.description || "Course study document formatted for student reading and AI Q&A."}
                       </p>
 
                       {/* Metadata */}
-                      <div className="flex items-center gap-3 text-[11px] text-slate-400 font-mono">
+                      <div className="flex items-center gap-3 text-[11px] text-slate-500 font-mono">
                         <span>{doc.pageCount || doc.sections.length} Pages</span>
                         <span>•</span>
                         <span>By {doc.uploadedBy || "Instructor"}</span>
@@ -1816,25 +1816,25 @@ export const TeacherPortal: React.FC<Props> = ({
                     </div>
 
                     {/* Bottom Teacher Action Bar */}
-                    <div className="pt-3 border-t border-slate-800/80 flex items-center justify-between gap-2 text-xs flex-wrap">
+                    <div className="pt-3 border-t border-slate-100 flex items-center justify-between gap-2 text-xs flex-wrap">
                       <div className="flex items-center gap-1.5">
                         <button
                           onClick={() => handleOpenEdit(doc)}
-                          className="p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white transition-colors cursor-pointer"
+                          className="p-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-600 hover:text-slate-900 transition-colors cursor-pointer"
                           title="Edit Subject, Unit & Title"
                         >
                           <Edit3 className="w-3.5 h-3.5" />
                         </button>
                         <button
                           onClick={() => onDuplicateDocument(doc.id)}
-                          className="p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white transition-colors cursor-pointer"
+                          className="p-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-600 hover:text-slate-900 transition-colors cursor-pointer"
                           title="Duplicate Note"
                         >
                           <Copy className="w-3.5 h-3.5" />
                         </button>
                         <button
                           onClick={() => setShowDeleteConfirmId(doc.id)}
-                          className="p-1.5 rounded-lg bg-slate-800 hover:bg-rose-950/60 text-slate-400 hover:text-rose-400 transition-colors cursor-pointer"
+                          className="p-1.5 rounded-lg bg-slate-100 hover:bg-rose-50 text-slate-500 hover:text-rose-600 transition-colors cursor-pointer"
                           title="Permanently Delete Note and Remove from ChromaDB"
                         >
                           <Trash2 className="w-3.5 h-3.5" />
@@ -1847,7 +1847,7 @@ export const TeacherPortal: React.FC<Props> = ({
                             href={doc.downloadUrl || doc.originalFileUrl || `/api/download/${doc.id}`}
                             download={doc.originalFileName || `${doc.title}.pptx`}
                             onClick={(e) => e.stopPropagation()}
-                            className="px-2 py-1.5 rounded-lg bg-orange-500/10 hover:bg-orange-500/20 text-orange-400 border border-orange-500/30 text-xs font-semibold flex items-center gap-1 cursor-pointer transition-colors"
+                            className="px-2 py-1.5 rounded-lg bg-orange-50 hover:bg-orange-100 text-orange-700 border border-orange-200 text-xs font-semibold flex items-center gap-1 cursor-pointer transition-colors"
                             title="Download original PowerPoint presentation (.pptx)"
                           >
                             <Download className="w-3.5 h-3.5" />
@@ -1856,14 +1856,14 @@ export const TeacherPortal: React.FC<Props> = ({
                         )}
                         <button
                           onClick={() => onSelectDocument(doc.id, true)}
-                          className="px-2.5 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 hover:text-amber-400 text-xs font-semibold flex items-center gap-1 cursor-pointer"
+                          className="px-2.5 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 hover:text-amber-600 text-xs font-semibold flex items-center gap-1 cursor-pointer"
                         >
-                          <Sparkles className="w-3.5 h-3.5 text-amber-400" />
+                          <Sparkles className="w-3.5 h-3.5 text-amber-500" />
                           <span>AI Tutor</span>
                         </button>
                         <button
                           onClick={() => onSelectDocument(doc.id, false)}
-                          className="px-3 py-1.5 rounded-lg bg-amber-500 hover:bg-amber-400 text-slate-950 text-xs font-bold flex items-center gap-1 transition-all shadow-xs cursor-pointer"
+                          className="px-3 py-1.5 rounded-lg bg-amber-500 hover:bg-amber-400 text-slate-950 text-xs font-bold flex items-center gap-1 transition-all shadow-2xs cursor-pointer"
                         >
                           <span>{doc.fileFormat === "pptx" || doc.fileFormat === "ppt" ? "View Slides" : "Open Reader"}</span>
                           <ArrowRight className="w-3.5 h-3.5" />
@@ -1882,15 +1882,15 @@ export const TeacherPortal: React.FC<Props> = ({
 
       {/* Edit Metadata Modal */}
       {editingDoc && (
-        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 max-w-lg w-full space-y-4 shadow-2xl animate-scaleUp">
-            <div className="flex items-center justify-between border-b border-slate-800 pb-3">
-              <h3 className="text-base font-bold text-white flex items-center gap-2">
-                <Edit3 className="w-4 h-4 text-amber-400" /> Edit Subject, Unit & Note Details
+        <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white border border-slate-200 rounded-3xl p-6 max-w-lg w-full space-y-4 shadow-2xl animate-scaleUp">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+              <h3 className="text-base font-bold text-slate-900 flex items-center gap-2">
+                <Edit3 className="w-4 h-4 text-amber-500" /> Edit Subject, Unit & Note Details
               </h3>
               <button
                 onClick={() => setEditingDoc(null)}
-                className="text-slate-400 hover:text-white p-1 rounded-lg cursor-pointer"
+                className="text-slate-400 hover:text-slate-700 p-1 rounded-lg cursor-pointer"
               >
                 ✕
               </button>
@@ -1898,20 +1898,20 @@ export const TeacherPortal: React.FC<Props> = ({
 
             <div className="space-y-3">
               <div>
-                <label className="block text-xs font-medium text-slate-400 mb-1">
+                <label className="block text-xs font-semibold text-slate-700 mb-1">
                   Document Title
                 </label>
                 <input
                   type="text"
                   value={editTitle}
                   onChange={(e) => setEditTitle(e.target.value)}
-                  className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2 text-xs text-white focus:outline-none focus:border-amber-500"
+                  className="w-full bg-white border border-slate-300 rounded-xl px-3.5 py-2 text-xs text-slate-900 focus:outline-none focus:border-amber-500 shadow-2xs"
                 />
               </div>
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-medium text-slate-400 mb-1">
+                  <label className="block text-xs font-semibold text-slate-700 mb-1">
                     Subject / Course
                   </label>
                   <input
@@ -1919,12 +1919,12 @@ export const TeacherPortal: React.FC<Props> = ({
                     value={editSubject}
                     onChange={(e) => setEditSubject(e.target.value)}
                     placeholder="e.g. AWS Cloud & Labs"
-                    className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2 text-xs text-white focus:outline-none focus:border-amber-500"
+                    className="w-full bg-white border border-slate-300 rounded-xl px-3.5 py-2 text-xs text-slate-900 focus:outline-none focus:border-amber-500 shadow-2xs"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-xs font-medium text-slate-400 mb-1">
+                  <label className="block text-xs font-semibold text-slate-700 mb-1">
                     Unit / Module
                   </label>
                   <input
@@ -1932,14 +1932,14 @@ export const TeacherPortal: React.FC<Props> = ({
                     value={editUnit}
                     onChange={(e) => setEditUnit(e.target.value)}
                     placeholder="e.g. Unit 1"
-                    className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2 text-xs text-white focus:outline-none focus:border-amber-500"
+                    className="w-full bg-white border border-slate-300 rounded-xl px-3.5 py-2 text-xs text-slate-900 focus:outline-none focus:border-amber-500 shadow-2xs"
                   />
                 </div>
               </div>
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-medium text-slate-400 mb-1">
+                  <label className="block text-xs font-semibold text-slate-700 mb-1">
                     Unit Topic Title
                   </label>
                   <input
@@ -1947,12 +1947,12 @@ export const TeacherPortal: React.FC<Props> = ({
                     value={editUnitTitle}
                     onChange={(e) => setEditUnitTitle(e.target.value)}
                     placeholder="e.g. Cloud Fundamentals"
-                    className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2 text-xs text-white focus:outline-none focus:border-amber-500"
+                    className="w-full bg-white border border-slate-300 rounded-xl px-3.5 py-2 text-xs text-slate-900 focus:outline-none focus:border-amber-500 shadow-2xs"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-xs font-medium text-slate-400 mb-1">
+                  <label className="block text-xs font-semibold text-slate-700 mb-1">
                     Course Code
                   </label>
                   <input
@@ -1960,36 +1960,36 @@ export const TeacherPortal: React.FC<Props> = ({
                     value={editCourseCode}
                     onChange={(e) => setEditCourseCode(e.target.value)}
                     placeholder="e.g. MCA-204"
-                    className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2 text-xs text-white focus:outline-none focus:border-amber-500"
+                    className="w-full bg-white border border-slate-300 rounded-xl px-3.5 py-2 text-xs text-slate-900 focus:outline-none focus:border-amber-500 shadow-2xs"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block text-xs font-medium text-slate-400 mb-1">
+                <label className="block text-xs font-semibold text-slate-700 mb-1">
                   Description / Summary
                 </label>
                 <textarea
                   rows={3}
                   value={editDescription}
                   onChange={(e) => setEditDescription(e.target.value)}
-                  className="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-xs text-white focus:outline-none focus:border-amber-500"
+                  className="w-full bg-white border border-slate-300 rounded-xl p-3 text-xs text-slate-900 focus:outline-none focus:border-amber-500 shadow-2xs"
                 />
               </div>
             </div>
 
-            <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-800">
+            <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-100">
               <button
                 type="button"
                 onClick={() => setEditingDoc(null)}
-                className="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold cursor-pointer"
+                className="px-4 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold cursor-pointer"
               >
                 Cancel
               </button>
               <button
                 type="button"
                 onClick={handleSaveEdit}
-                className="px-4 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 text-xs font-bold cursor-pointer"
+                className="px-4 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 text-xs font-bold cursor-pointer shadow-xs"
               >
                 Save Changes
               </button>
@@ -2000,15 +2000,15 @@ export const TeacherPortal: React.FC<Props> = ({
 
       {/* Delete Single Document Permanently Modal */}
       {showDeleteConfirmId && (
-        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-slate-900 border border-rose-900/50 rounded-3xl p-6 max-w-md w-full shadow-2xl space-y-4 animate-fadeIn">
+        <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white border border-rose-200 rounded-3xl p-6 max-w-md w-full shadow-2xl space-y-4 animate-fadeIn">
             <div className="flex items-center gap-3">
-              <div className="p-3 rounded-2xl bg-rose-500/15 text-rose-400 border border-rose-500/30">
+              <div className="p-3 rounded-2xl bg-rose-50 text-rose-600 border border-rose-200">
                 <Trash2 className="w-6 h-6" />
               </div>
               <div>
-                <h3 className="text-base font-bold text-white">Permanently Delete Note?</h3>
-                <p className="text-xs text-slate-400 mt-0.5">
+                <h3 className="text-base font-bold text-slate-900">Permanently Delete Note?</h3>
+                <p className="text-xs text-slate-500 mt-0.5">
                   This note will be permanently erased from disk storage and all vector embeddings will be completely removed from ChromaDB.
                 </p>
               </div>
@@ -2017,13 +2017,13 @@ export const TeacherPortal: React.FC<Props> = ({
             {(() => {
               const docToDelete = documents.find(d => d.id === showDeleteConfirmId);
               return docToDelete ? (
-                <div className="bg-slate-950 p-3.5 rounded-xl border border-slate-800 text-xs space-y-1.5">
-                  <div className="font-bold text-rose-300 truncate">
+                <div className="bg-slate-50 p-3.5 rounded-xl border border-slate-200 text-xs space-y-1.5">
+                  <div className="font-bold text-rose-700 truncate">
                     {docToDelete.title}
                   </div>
-                  <div className="text-[11px] text-slate-400 flex items-center justify-between">
+                  <div className="text-[11px] text-slate-500 flex items-center justify-between">
                     <span>{docToDelete.subject || "Subject"} • {docToDelete.unit || "Unit"}</span>
-                    <span className="font-mono text-slate-500">{docToDelete.sections?.length || docToDelete.pageCount || 1} pages</span>
+                    <span className="font-mono text-slate-400">{docToDelete.sections?.length || docToDelete.pageCount || 1} pages</span>
                   </div>
                 </div>
               ) : null;
@@ -2033,7 +2033,7 @@ export const TeacherPortal: React.FC<Props> = ({
               <button
                 type="button"
                 onClick={() => setShowDeleteConfirmId(null)}
-                className="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold cursor-pointer"
+                className="px-4 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold cursor-pointer"
               >
                 Cancel
               </button>
@@ -2044,7 +2044,7 @@ export const TeacherPortal: React.FC<Props> = ({
                   setShowDeleteConfirmId(null);
                   if (id) onDeleteDocument(id);
                 }}
-                className="px-4 py-2 rounded-xl bg-rose-600 hover:bg-rose-500 text-white text-xs font-bold flex items-center gap-1.5 shadow-lg shadow-rose-600/30 cursor-pointer"
+                className="px-4 py-2 rounded-xl bg-rose-600 hover:bg-rose-500 text-white text-xs font-bold flex items-center gap-1.5 shadow-md shadow-rose-600/20 cursor-pointer"
               >
                 <Trash2 className="w-3.5 h-3.5" />
                 <span>Permanently Delete</span>
@@ -2056,24 +2056,24 @@ export const TeacherPortal: React.FC<Props> = ({
 
       {/* Clear All Files Modal */}
       {showResetConfirm && (
-        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 max-w-md w-full shadow-2xl space-y-4 animate-fadeIn">
+        <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white border border-slate-200 rounded-3xl p-6 max-w-md w-full shadow-2xl space-y-4 animate-fadeIn">
             <div className="flex items-center gap-3">
-              <div className="p-3 rounded-2xl bg-rose-500/10 text-rose-400">
+              <div className="p-3 rounded-2xl bg-rose-50 text-rose-600 border border-rose-200">
                 <Trash2 className="w-6 h-6" />
               </div>
               <div>
-                <h3 className="text-base font-bold text-white">Clear All Files?</h3>
-                <p className="text-xs text-slate-400">
+                <h3 className="text-base font-bold text-slate-900">Clear All Files?</h3>
+                <p className="text-xs text-slate-500">
                   This will remove all {documents.length} document{documents.length === 1 ? "" : "s"} and vector indexes from the portal so you can start completely fresh.
                 </p>
               </div>
             </div>
 
-            <div className="bg-slate-950 p-3.5 rounded-xl border border-slate-800 text-xs space-y-1.5">
-              <div className="flex justify-between text-slate-300">
+            <div className="bg-slate-50 p-3.5 rounded-xl border border-slate-200 text-xs space-y-1.5">
+              <div className="flex justify-between text-slate-700">
                 <span>Total Documents to Clear:</span>
-                <span className="font-bold text-rose-400">{documents.length}</span>
+                <span className="font-bold text-rose-600">{documents.length}</span>
               </div>
             </div>
 
@@ -2081,7 +2081,7 @@ export const TeacherPortal: React.FC<Props> = ({
               <button
                 type="button"
                 onClick={() => setShowResetConfirm(false)}
-                className="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold cursor-pointer"
+                className="px-4 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold cursor-pointer"
               >
                 Cancel
               </button>
@@ -2092,7 +2092,7 @@ export const TeacherPortal: React.FC<Props> = ({
                   else if (onRestoreDefaultNotes) onRestoreDefaultNotes();
                   setShowResetConfirm(false);
                 }}
-                className="px-4 py-2 rounded-xl bg-rose-600 hover:bg-rose-500 text-white text-xs font-bold flex items-center gap-1.5 shadow-lg shadow-rose-600/30 cursor-pointer"
+                className="px-4 py-2 rounded-xl bg-rose-600 hover:bg-rose-500 text-white text-xs font-bold flex items-center gap-1.5 shadow-md shadow-rose-600/20 cursor-pointer"
               >
                 <Trash2 className="w-3.5 h-3.5" />
                 <span>Confirm & Delete All</span>

@@ -39,6 +39,7 @@ export const PdfCanvasViewer: React.FC<Props> = ({
   const [error, setError] = useState<string | null>(null);
   const [renderMode, setRenderMode] = useState<"single" | "continuous">("continuous");
   const [viewNative, setViewNative] = useState<boolean>(false);
+  const [failedImages, setFailedImages] = useState<Set<number>>(new Set());
 
   const singleCanvasRef = useRef<HTMLCanvasElement | null>(null);
   const containerRef = useRef<HTMLDivElement | null>(null);
