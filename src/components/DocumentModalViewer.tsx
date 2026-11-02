@@ -504,16 +504,14 @@ export const DocumentModalViewer: React.FC<Props> = ({
   );
 
   useEffect(() => {
-    if (isGoogleDriveDoc) {
-      setViewMode("drive-sandbox");
-    } else if (isPptxDoc) {
+    if (isPptxDoc) {
       setViewMode("ppt");
     } else if (activeDoc?.pdfUrl || activeDoc?.pdfDataUrl) {
       setViewMode("pdf");
     } else {
       setViewMode("notes");
     }
-  }, [activeView, isGoogleDriveDoc, isPptxDoc, activeDoc?.pdfUrl, activeDoc?.pdfDataUrl]);
+  }, [activeView, isPptxDoc, activeDoc?.pdfUrl, activeDoc?.pdfDataUrl]);
 
   const handleCopyCode = (codeText: string, key: string) => {
     navigator.clipboard.writeText(codeText);
