@@ -910,20 +910,6 @@ export const DocumentModalViewer: React.FC<Props> = ({
             </a>
           )}
 
-          {(activeDoc?.originalFileUrl || activeDoc?.downloadUrl) && (
-            <button
-              type="button"
-              onClick={() => {
-                setViewMode("drive-sandbox");
-                if (!effectiveAiChatOpen) handleToggleAiPanel();
-              }}
-              className="flex items-center gap-1 sm:gap-1.5 px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-lg text-[11px] sm:text-xs font-extrabold transition-all shadow-md bg-purple-600 hover:bg-purple-500 text-white cursor-pointer"
-              title="Open Google Drive & RAG Study Sandbox with notes and live AI chat"
-            >
-              <ExternalLink className="w-3.5 h-3.5" />
-              <span>Google Drive Sandbox</span>
-            </button>
-          )}
 
           <button
             type="button"
@@ -1118,23 +1104,6 @@ export const DocumentModalViewer: React.FC<Props> = ({
                   <span className="font-bold flex items-center gap-1.5 text-amber-400">
                     <ExternalLink className="w-4 h-4" /> Google Drive Notes Sandbox
                   </span>
-                  <div className="flex items-center gap-2">
-                    <button
-                      type="button"
-                      onClick={() => setViewMode("notes")}
-                      className="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg text-xs font-semibold cursor-pointer"
-                    >
-                      Read Clean Notes
-                    </button>
-                    <a
-                      href={activeDoc?.originalFileUrl || activeDoc?.downloadUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="px-3 py-1 bg-amber-500 text-slate-950 font-bold rounded-lg hover:bg-amber-400 transition-colors shadow-sm"
-                    >
-                      Open in Google Drive ↗
-                    </a>
-                  </div>
                 </div>
 
 
@@ -1162,13 +1131,6 @@ export const DocumentModalViewer: React.FC<Props> = ({
                   <span className="flex items-center gap-1.5 text-amber-400">
                     <Sparkles className="w-4 h-4" /> RAG Application AI Tutor (Notes Q&A)
                   </span>
-                  <button
-                    type="button"
-                    onClick={() => setViewMode("notes")}
-                    className="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg text-xs font-semibold cursor-pointer"
-                  >
-                    Switch to Notes Reader
-                  </button>
                 </div>
                 <div className="flex-1 overflow-hidden flex flex-col">
                   <AiAssistantModal
