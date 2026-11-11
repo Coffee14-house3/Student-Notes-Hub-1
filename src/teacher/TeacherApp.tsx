@@ -225,6 +225,11 @@ export const TeacherApp: React.FC<Props> = ({ isStandalone = true, onSwitchPorta
       setDocuments(prev => {
         const updated = [newDoc, ...prev.filter(d => d.id !== newDoc.id)];
         saveDocumentsToStorage(updated);
+        apiFetch("/api/documents/sync", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ documents: updated, overwrite: false })
+        }).catch(() => {});
         return updated;
       });
     } catch (err: any) {
@@ -246,6 +251,7 @@ export const TeacherApp: React.FC<Props> = ({ isStandalone = true, onSwitchPorta
     courseCode?: string;
     uploadedBy?: string;
     notesSummary?: string;
+    isPublished?: boolean;
   }) => {
     setIsUploading(true);
     setUploadError(null);
@@ -264,6 +270,11 @@ export const TeacherApp: React.FC<Props> = ({ isStandalone = true, onSwitchPorta
         setDocuments(prev => {
           const updated = [data.document, ...prev.filter(d => d.id !== data.document.id)];
           saveDocumentsToStorage(updated);
+          apiFetch("/api/documents/sync", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ documents: updated, overwrite: false })
+          }).catch(() => {});
           return updated;
         });
       }

@@ -37,6 +37,7 @@ interface Props {
     courseCode?: string;
     uploadedBy?: string;
     notesSummary?: string;
+    isPublished?: boolean;
   }) => Promise<any>;
   onAddDocument?: (doc: NoteDocument) => void;
   onLoadSampleDocument: (sampleType: "pdf" | "code" | "markdown" | "docx" | "pptx") => void;
@@ -124,10 +125,27 @@ export const TeacherPortal: React.FC<Props> = ({
   // Google Drive / Google Link Importer State
   const [gdriveLink, setGdriveLink] = useState<string>("");
   const [gdriveTitle, setGdriveTitle] = useState<string>("");
+  const [gdriveSubject, setGdriveSubject] = useState<string>("");
+  const [gdriveUnit, setGdriveUnit] = useState<string>("");
+  const [gdriveUnitTitle, setGdriveUnitTitle] = useState<string>("");
+  const [gdriveCourseCode, setGdriveCourseCode] = useState<string>("");
+  const [gdriveInstructor, setGdriveInstructor] = useState<string>("");
+  const [gdriveIsPublished, setGdriveIsPublished] = useState<boolean>(true);
   const [gdriveSummary, setGdriveSummary] = useState<string>("");
   const [gdriveImporting, setGdriveImporting] = useState<boolean>(false);
   const [gdriveSuccess, setGdriveSuccess] = useState<string | null>(null);
   const [gdriveError, setGdriveError] = useState<string | null>(null);
+  const gdriveTitleInputRef = useRef<HTMLInputElement>(null);
+
+  // Effective Subject & Unit
+  const effectiveSubject = subjectInput.trim() || "General Studies";
+  const effectiveUnit = unitInput.trim() || "Unit 1";
+
+  // Collapsed Subjects in Curriculum View
+  const [collapsedSubjects, setCollapsedSubjects] = useState<Record<string, boolean>>({});
+
+  const effectiveGdriveSubject = gdriveSubject.trim() || effectiveSubject;
+  const effectiveGdriveUnit = gdriveUnit.trim() || effectiveUnit;
 
   const handleGdriveImport = async () => {
     if (!gdriveLink.trim()) return;
@@ -137,15 +155,22 @@ export const TeacherPortal: React.FC<Props> = ({
     try {
       const url = gdriveLink.trim();
       const title = gdriveTitle.trim() || undefined;
+      const targetSubj = effectiveGdriveSubject;
+      const targetUnit = effectiveGdriveUnit;
+      const targetUnitTitle = gdriveUnitTitle.trim() || unitTitleInput.trim() || undefined;
+      const targetCourseCode = gdriveCourseCode.trim() || courseCodeInput.trim() || "MCA-204";
+      const targetInstructor = gdriveInstructor.trim() || instructorName.trim() || "Instructor";
+
       const payload = {
         url,
         title,
-        subject: effectiveSubject,
-        unit: effectiveUnit,
-        unitTitle: unitTitleInput.trim() || undefined,
-        courseCode: courseCodeInput.trim() || undefined,
-        uploadedBy: instructorName.trim() || "Instructor",
-        notesSummary: gdriveSummary.trim() || undefined
+        subject: targetSubj,
+        unit: targetUnit,
+        unitTitle: targetUnitTitle,
+        courseCode: targetCourseCode,
+        uploadedBy: targetInstructor,
+        notesSummary: gdriveSummary.trim() || undefined,
+        isPublished: gdriveIsPublished
       };
 
       let createdDoc: NoteDocument | null = null;
@@ -176,7 +201,13 @@ export const TeacherPortal: React.FC<Props> = ({
       setGdriveLink("");
       setGdriveTitle("");
       setGdriveSummary("");
-      setGdriveSuccess(`✓ "${createdDoc?.title || "Note"}" successfully imported & indexed in ChromaDB Cloud (${chunksCount} semantic vector chunks). Available to all 16 students!`);
+      setGdriveUnitTitle("");
+      setSearchQuery("");
+      setCollapsedSubjects(prev => ({
+        ...prev,
+        [targetSubj]: false
+      }));
+      setGdriveSuccess(`✓ "${createdDoc?.title || title || "Note"}" successfully imported & indexed in ChromaDB Cloud (${chunksCount} semantic vector chunks). Available to students!`);
       setTimeout(() => setGdriveSuccess(null), 8000);
     } catch (err: any) {
       setGdriveError(err?.message || "Failed to import Google Link");
@@ -187,9 +218,6 @@ export const TeacherPortal: React.FC<Props> = ({
 
   const effectiveUploading = isUploading || localUploading;
   const effectiveUploadError = uploadError || localUploadError;
-
-  // Collapsed Subjects in Curriculum View
-  const [collapsedSubjects, setCollapsedSubjects] = useState<Record<string, boolean>>({});
 
   // Announcement Form State
   const [showAnnounceForm, setShowAnnounceForm] = useState<boolean>(false);
@@ -213,9 +241,6 @@ export const TeacherPortal: React.FC<Props> = ({
   const [mergedGuideTitle, setMergedGuideTitle] = useState<string>("Comprehensive Cloud Master Guide");
 
   const fileInputRef = useRef<HTMLInputElement>(null);
-
-  const effectiveSubject = subjectInput.trim() || "General Studies";
-  const effectiveUnit = unitInput.trim() || "Unit 1";
 
   const getDocFormatBadge = (doc: NoteDocument) => {
     const name = doc.title.toLowerCase();
@@ -354,10 +379,18 @@ export const TeacherPortal: React.FC<Props> = ({
       setUploadStage(`Completed! Document is ready in ${effectiveUnit}.`);
       setUploadSuccessMessage(`Successfully uploaded and indexed "${customTitle.trim() || selectedFile.name}" into ${effectiveUnit} (${effectiveSubject})!`);
 
-      // Reset file form
+      // Reset file form and reset filters so the newly uploaded file is immediately visible!
       setSelectedFile(null);
       setCustomTitle("");
       setUnitTitleInput("");
+      setSearchQuery("");
+      setSelectedSubjectFilter("all");
+      setSelectedUnitFilter("all");
+      setCollapsedSubjects(prev => {
+        const next = new Set(prev);
+        next.delete(effectiveSubject);
+        return next;
+      });
 
       setTimeout(() => {
         setUploadSuccessMessage(null);
@@ -459,14 +492,19 @@ export const TeacherPortal: React.FC<Props> = ({
   };
 
   const handlePresetUploadForSubjectAndUnit = (subj: string, unit?: string) => {
-    setSubjectInput(subj);
+    setGdriveSubject(subj);
     if (unit) {
-      setUnitInput(unit);
+      setGdriveUnit(unit);
     }
 
-    // Scroll smoothly to upload area
-    fileInputRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
-    fileInputRef.current?.click();
+    // Scroll smoothly to Google Link upload area
+    const el = document.getElementById("google-link-upload-card");
+    if (el) {
+      el.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+    setTimeout(() => {
+      gdriveTitleInputRef.current?.focus();
+    }, 250);
   };
 
   // Extract all unique subjects (fallback to "General Studies" if missing/empty)
@@ -619,384 +657,19 @@ export const TeacherPortal: React.FC<Props> = ({
         </div>
 
 
-        {/* Upload Studio Card (Drag & Drop + Subject/Unit Form) */}
-        <div className="bg-white border border-slate-200 rounded-3xl p-6 sm:p-8 shadow-xs space-y-6">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-100 pb-4">
-            <div>
-              <div className="flex items-center gap-2 mb-1">
-                <h2 className="text-lg font-bold text-slate-900 flex items-center gap-2">
-                  <Upload className="w-5 h-5 text-amber-500" /> Upload Course Material (PDF, DOCX, PPT)
-                </h2>
-              </div>
-            </div>
-          </div>
-
-          {/* Upload Drop Zone & Form Grid */}
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-            
-            {/* Left: Drag & Drop Dropzone (5 cols) */}
-            <div className="lg:col-span-5 space-y-3">
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept=".pdf,.docx,.doc,.pptx,.ppt,.txt,.md,.py,.js,.json,.html"
-                onChange={handleFileChange}
-                className="hidden"
-              />
-
-              <div
-                onDragEnter={!effectiveUploading ? handleDrag : undefined}
-                onDragLeave={!effectiveUploading ? handleDrag : undefined}
-                onDragOver={!effectiveUploading ? handleDrag : undefined}
-                onDrop={!effectiveUploading ? handleDrop : undefined}
-                onClick={() => {
-                  if (!effectiveUploading) fileInputRef.current?.click();
-                }}
-                className={`border-2 border-dashed rounded-2xl p-6 sm:p-8 text-center transition-all flex flex-col items-center justify-center gap-3 relative min-h-[240px] ${
-                  effectiveUploading
-                    ? "border-amber-500/80 bg-amber-50 cursor-wait pointer-events-none"
-                    : dragActive
-                    ? "border-amber-500 bg-amber-50/60 scale-[1.01] cursor-pointer"
-                    : selectedFile
-                    ? "border-emerald-500/80 bg-emerald-50/50 cursor-pointer"
-                    : "border-slate-300 hover:border-amber-500 bg-slate-50/70 hover:bg-amber-50/30 cursor-pointer"
-                }`}
-              >
-                {effectiveUploading ? (
-                  <div className="space-y-3 w-full max-w-[280px]">
-                    <div className="relative mx-auto w-14 h-14 flex items-center justify-center">
-                      <div className="absolute inset-0 rounded-full border-4 border-amber-500/20 border-t-amber-500 animate-spin" />
-                      <Upload className="w-6 h-6 text-amber-500 animate-pulse" />
-                    </div>
-                    <div>
-                      <div className="text-sm font-bold text-slate-900 truncate">
-                        {selectedFile?.name || "Ingesting Document"}
-                      </div>
-                      <div className="text-xs text-amber-600 font-mono font-semibold mt-1">
-                        {uploadStage || "Processing slides & vector index..."}
-                      </div>
-                    </div>
-                    <div className="w-full bg-slate-200 rounded-full h-2 overflow-hidden border border-slate-300">
-                      <div 
-                        className="bg-gradient-to-r from-amber-500 via-emerald-400 to-amber-400 h-full rounded-full transition-all duration-300"
-                        style={{ width: `${uploadPercent}%` }}
-                      />
-                    </div>
-                    <div className="text-[11px] text-slate-500">
-                      Please wait • {uploadPercent}% complete
-                    </div>
-                  </div>
-                ) : selectedFile ? (
-                  <div className="space-y-1">
-                    <div className="text-sm font-bold text-slate-900 truncate max-w-[240px]">
-                      {selectedFile.name}
-                    </div>
-                    <div className="text-xs text-emerald-600 font-semibold flex items-center justify-center gap-1.5">
-                      <span>
-                        {selectedFile.size > 1024 * 1024 
-                          ? `${(selectedFile.size / (1024 * 1024)).toFixed(1)} MB` 
-                          : `${(selectedFile.size / 1024).toFixed(1)} KB`}
-                      </span>
-                      <span>• Auto-scale pipeline verified</span>
-                    </div>
-                    <div className="text-[10px] text-indigo-600">
-                      {selectedFile.size > 15 * 1024 * 1024 
-                        ? "⚡ Direct binary stream upload active (Zero memory bloat)" 
-                        : "✓ Ready to parse & vector index"}
-                    </div>
-                    <button
-                      type="button"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setSelectedFile(null);
-                      }}
-                      className="text-[11px] text-rose-600 hover:underline pt-1 cursor-pointer font-medium"
-                    >
-                      Remove file
-                    </button>
-                  </div>
-                ) : (
-                  <div className="space-y-1">
-                    <div className="text-sm font-bold text-slate-900">
-                      Drag & drop note file, or <span className="text-amber-600 underline">browse</span>
-                    </div>
-                    <div className="text-xs text-slate-500">
-                      PDF, Word (.docx, .doc), PowerPoint (.pptx, .ppt), Code
-                    </div>
-                    <div className="pt-1.5 flex items-center justify-center">
-                      <span className="px-2.5 py-1 rounded-full bg-slate-100 border border-slate-200 text-[10px] text-slate-600 font-semibold">
-                        Max file size: 1.0 GB
-                      </span>
-                    </div>
-                  </div>
-                )}
-              </div>
-
-              {/* Supported Format Badges */}
-              <div className="grid grid-cols-3 gap-2 pt-1">
-                <div className="bg-rose-50 border border-rose-200 rounded-xl p-2 text-center shadow-xs">
-                  <div className="text-[11px] font-bold text-rose-700">PDF</div>
-                  <div className="text-[9px] text-slate-500">.pdf docs</div>
-                </div>
-                <div className="bg-blue-50 border border-blue-200 rounded-xl p-2 text-center shadow-xs">
-                  <div className="text-[11px] font-bold text-blue-700">Word</div>
-                  <div className="text-[9px] text-slate-500">.docx / .doc</div>
-                </div>
-                <div className="bg-amber-50 border border-amber-200 rounded-xl p-2 text-center shadow-xs">
-                  <div className="text-[11px] font-bold text-amber-700">PowerPoint</div>
-                  <div className="text-[9px] text-slate-500">.pptx / .ppt</div>
-                </div>
-              </div>
-
-              {effectiveUploadError && (
-                <div className="p-3 bg-rose-50 border border-rose-200 rounded-xl text-xs text-rose-700 flex items-center gap-2">
-                  <AlertCircle className="w-4 h-4 text-rose-500 shrink-0" />
-                  <span>{effectiveUploadError}</span>
-                </div>
-              )}
-            </div>
-
-            {/* Right: Subject, Unit & Metadata Settings (7 cols) */}
-            <div className="lg:col-span-7 space-y-4 bg-slate-50 border border-slate-200 rounded-2xl p-5 shadow-xs">
-              <div className="flex items-center justify-between border-b border-slate-200 pb-2">
-                <h3 className="text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center gap-2">
-                  <SlidersHorizontal className="w-3.5 h-3.5 text-amber-500" /> Subject & Unit Classification
-                </h3>
-                <span className="text-[11px] text-amber-700 font-mono font-semibold">
-                  {effectiveSubject} • {effectiveUnit}
-                </span>
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
-                
-                {/* 1. Document Title */}
-                <div className="sm:col-span-2">
-                  <label className="block text-xs font-medium text-slate-600 mb-1">
-                    Document Title
-                  </label>
-                  <input
-                    type="text"
-                    disabled={effectiveUploading}
-                    value={customTitle}
-                    onChange={(e) => setCustomTitle(e.target.value)}
-                    placeholder="e.g. EC2 Virtual Servers & Database Architecture"
-                    className="w-full bg-white border border-slate-300 rounded-xl px-3.5 py-2 text-xs text-slate-900 placeholder-slate-400 focus:outline-none focus:border-amber-500 shadow-xs disabled:opacity-60 disabled:cursor-not-allowed"
-                  />
-                </div>
-
-                {/* 2. Subject / Course (Direct text input) */}
-                <div>
-                  <label className="block text-xs font-medium text-slate-600 mb-1">
-                    Subject / Course Name
-                  </label>
-                  <input
-                    type="text"
-                    disabled={effectiveUploading}
-                    list="existing-subjects-list"
-                    value={subjectInput}
-                    onChange={(e) => setSubjectInput(e.target.value)}
-                    placeholder="Type subject (e.g. Operating Systems, Cloud Computing)..."
-                    className="w-full bg-white border border-slate-300 rounded-xl px-3.5 py-2 text-xs text-slate-900 placeholder-slate-400 focus:outline-none focus:border-amber-500 shadow-xs disabled:opacity-60 disabled:cursor-not-allowed"
-                  />
-                  {allSubjects.length > 0 && (
-                    <datalist id="existing-subjects-list">
-                      {allSubjects.map((s) => (
-                        <option key={s} value={s} />
-                      ))}
-                    </datalist>
-                  )}
-                </div>
-
-                {/* 3. Unit Organization */}
-                <div>
-                  <label className="block text-xs font-medium text-slate-600 mb-1">
-                    Unit / Module Name
-                  </label>
-                  <input
-                    type="text"
-                    disabled={effectiveUploading}
-                    list="existing-units-list"
-                    value={unitInput}
-                    onChange={(e) => setUnitInput(e.target.value)}
-                    placeholder="e.g. Unit 1, Module 2, Lab Manual"
-                    className="w-full bg-white border border-slate-300 rounded-xl px-3.5 py-2 text-xs text-slate-900 placeholder-slate-400 focus:outline-none focus:border-amber-500 shadow-xs disabled:opacity-60 disabled:cursor-not-allowed"
-                  />
-                  <datalist id="existing-units-list">
-                    <option value="Unit 1" />
-                    <option value="Unit 2" />
-                    <option value="Unit 3" />
-                    <option value="Unit 4" />
-                    <option value="Unit 5" />
-                    <option value="Unit 6" />
-                    <option value="Lab Manual" />
-                    {allUnits.filter(u => !["Unit 1","Unit 2","Unit 3","Unit 4","Unit 5","Unit 6","Lab Manual"].includes(u)).map(u => (
-                      <option key={u} value={u} />
-                    ))}
-                  </datalist>
-                </div>
-
-                {/* 4. Unit Topic Subtitle */}
-                <div>
-                  <label className="block text-xs font-medium text-slate-600 mb-1">
-                    Unit Topic / Chapter Name (Optional)
-                  </label>
-                  <input
-                    type="text"
-                    disabled={effectiveUploading}
-                    value={unitTitleInput}
-                    onChange={(e) => setUnitTitleInput(e.target.value)}
-                    placeholder="e.g. Compute Services & IaaS Deployments"
-                    className="w-full bg-white border border-slate-300 rounded-xl px-3.5 py-2 text-xs text-slate-900 placeholder-slate-400 focus:outline-none focus:border-amber-500 shadow-xs disabled:opacity-60 disabled:cursor-not-allowed"
-                  />
-                </div>
-
-                {/* 5. Course Code */}
-                <div>
-                  <label className="block text-xs font-medium text-slate-600 mb-1">
-                    Course Code / Semester (Optional)
-                  </label>
-                  <input
-                    type="text"
-                    disabled={effectiveUploading}
-                    value={courseCodeInput}
-                    onChange={(e) => setCourseCodeInput(e.target.value)}
-                    placeholder="e.g. MCA-204 or CS-301"
-                    className="w-full bg-white border border-slate-300 rounded-xl px-3.5 py-2 text-xs text-slate-900 placeholder-slate-400 focus:outline-none focus:border-amber-500 shadow-xs disabled:opacity-60 disabled:cursor-not-allowed"
-                  />
-                </div>
-
-                {/* 6. Instructor Name */}
-                <div>
-                  <label className="block text-xs font-medium text-slate-600 mb-1">
-                    Instructor Name (Optional)
-                  </label>
-                  <input
-                    type="text"
-                    disabled={effectiveUploading}
-                    value={instructorName}
-                    onChange={(e) => setInstructorName(e.target.value)}
-                    placeholder="e.g. Prof. Alan or Dr. Sharma"
-                    className="w-full bg-white border border-slate-300 rounded-xl px-3.5 py-2 text-xs text-slate-900 placeholder-slate-400 focus:outline-none focus:border-amber-500 shadow-xs disabled:opacity-60 disabled:cursor-not-allowed"
-                  />
-                </div>
-
-                {/* 7. Visibility */}
-                <div className="flex flex-col justify-end">
-                  <label className="block text-xs font-medium text-slate-600 mb-1">
-                    Student Visibility
-                  </label>
-                  <button
-                    type="button"
-                    disabled={effectiveUploading}
-                    onClick={() => setIsPublishedOnUpload(!isPublishedOnUpload)}
-                    className={`flex items-center gap-2 px-3 py-2 rounded-xl border text-xs font-semibold transition-all cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed ${
-                      isPublishedOnUpload
-                        ? "bg-emerald-50 border-emerald-300 text-emerald-800"
-                        : "bg-slate-100 border-slate-300 text-slate-700"
-                    }`}
-                  >
-                    {isPublishedOnUpload ? (
-                      <>
-                        <Unlock className="w-3.5 h-3.5 text-emerald-600" />
-                        <span>🟢 Published (Visible to Students)</span>
-                      </>
-                    ) : (
-                      <>
-                        <Lock className="w-3.5 h-3.5 text-amber-600" />
-                        <span>🟡 Save as Draft (Hidden)</span>
-                      </>
-                    )}
-                  </button>
-                </div>
-
-              </div>
-
-              {/* Dedicated Upload Processing & Loading Banner */}
-              {effectiveUploading && (
-                <div className="p-4 rounded-2xl bg-amber-50 border-2 border-amber-300 flex flex-col gap-3 shadow-sm">
-                  <div className="flex items-center justify-between text-xs">
-                    <div className="flex items-center gap-2 text-amber-900 font-extrabold">
-                      <RefreshCw className="w-4 h-4 animate-spin text-amber-600" />
-                      <span>Uploading & Processing Document...</span>
-                    </div>
-                    <span className="font-mono text-amber-700 font-extrabold text-xs">{uploadPercent}%</span>
-                  </div>
-
-                  <div className="w-full bg-slate-200 rounded-full h-3 overflow-hidden border border-slate-300 p-0.5">
-                    <div 
-                      className="bg-gradient-to-r from-amber-500 via-amber-400 to-emerald-400 h-full rounded-full transition-all duration-300 shadow-sm"
-                      style={{ width: `${uploadPercent}%` }}
-                    />
-                  </div>
-
-                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1 text-[11px]">
-                    <span className="text-slate-800 font-medium flex items-center gap-1.5 truncate">
-                      <span className="w-2 h-2 rounded-full bg-amber-500 animate-ping shrink-0" />
-                      <span className="truncate">{uploadStage || `Processing ${selectedFile?.name}...`}</span>
-                    </span>
-                    <span className="text-amber-800 font-mono text-[10px] uppercase tracking-wider shrink-0 font-bold">
-                      Target: {effectiveUnit}
-                    </span>
-                  </div>
-
-                  <div className="text-[11px] text-amber-900 bg-amber-100/70 p-3 rounded-xl border border-amber-300 flex items-start gap-2.5">
-                    <div className="w-2 h-2 rounded-full bg-amber-500 shrink-0 mt-1" />
-                    <p className="leading-snug">
-                      <strong className="text-amber-950">Teacher Notice:</strong> Processing presentation slides, extracting images, and indexing for AI search. <strong>Please wait — do not click the upload button again or refresh the page.</strong>
-                    </p>
-                  </div>
-                </div>
-              )}
-
-              {uploadSuccessMessage && (
-                <div className="p-3.5 rounded-xl bg-emerald-50 border border-emerald-300 text-emerald-800 text-xs flex items-center gap-2.5 shadow-sm">
-                  <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
-                  <span className="font-semibold">{uploadSuccessMessage}</span>
-                </div>
-              )}
-
-              {/* Upload Button */}
-              <div className="pt-3 border-t border-slate-200 flex items-center justify-between gap-3">
-                <div className="text-[11px] text-slate-500 hidden sm:block">
-                  Destination: <span className="text-slate-900 font-medium">{effectiveSubject}</span> &gt; <span className="text-amber-700 font-medium">{effectiveUnit}</span>
-                </div>
-
-                <button
-                  type="button"
-                  onClick={handleExecuteUpload}
-                  disabled={!selectedFile || effectiveUploading}
-                  className={`px-5 py-2.5 rounded-xl text-xs font-bold flex items-center gap-2 transition-all shadow-xs ${
-                    !selectedFile || effectiveUploading
-                      ? "bg-slate-200 text-slate-400 border border-slate-300 cursor-not-allowed opacity-80 shadow-none pointer-events-none"
-                      : "bg-amber-500 hover:bg-amber-400 text-slate-950 hover:shadow-amber-500/20 cursor-pointer"
-                  }`}
-                >
-                  {effectiveUploading ? (
-                    <>
-                      <RefreshCw className="w-4 h-4 animate-spin text-amber-400" />
-                      <span>Uploading in Progress ({uploadPercent}%)... Please wait</span>
-                    </>
-                  ) : (
-                    <>
-                      <Upload className="w-4 h-4" />
-                      <span>Upload to {effectiveUnit}</span>
-                    </>
-                  )}
-                </button>
-              </div>
-            </div>
-
-          </div>
-        </div>
-
         {/* Google Drive / Google Docs / Slides Link Importer Card */}
-        <div className="bg-white border border-slate-200 rounded-3xl p-6 sm:p-8 shadow-xs space-y-5">
+        <div id="google-link-upload-card" className="bg-white border border-slate-200 rounded-3xl p-6 sm:p-8 shadow-xs space-y-5">
           <div className="flex items-center justify-between border-b border-slate-100 pb-3 flex-wrap gap-2">
-            <div className="flex items-center gap-2">
-              <HardDrive className="w-5 h-5 text-indigo-600" />
-              <h3 className="font-bold text-slate-900 text-base">🔗 Upload Course Notes via Google Link</h3>
+            <div className="flex items-center gap-2.5">
+              <div className="p-2 bg-indigo-50 border border-indigo-100 rounded-xl text-indigo-600">
+                <HardDrive className="w-5 h-5" />
+              </div>
+              <div>
+                <h2 className="font-bold text-slate-900 text-base sm:text-lg">Upload Course Notes via Google Link</h2>
+                <p className="text-xs text-slate-500">Fast cloud indexing for Google Drive PDFs, Docs, Slides, and Sheets</p>
+              </div>
             </div>
-            <span className="px-2.5 py-0.5 rounded-full bg-indigo-50 text-indigo-700 border border-indigo-200 text-[11px] font-semibold">
+            <span className="px-3 py-1 rounded-full bg-indigo-50 text-indigo-700 border border-indigo-200 text-xs font-semibold">
               Docs • Drive PDF • Slides • Sheets
             </span>
           </div>
@@ -1016,46 +689,183 @@ export const TeacherPortal: React.FC<Props> = ({
             </div>
           )}
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-1">
-              <label className="text-xs font-semibold text-slate-700">Document Title</label>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+            {/* 1. Document Title */}
+            <div className="sm:col-span-2">
+              <label className="block text-xs font-medium text-slate-600 mb-1">
+                Document Title
+              </label>
               <input
+                ref={gdriveTitleInputRef}
                 type="text"
+                disabled={gdriveImporting}
                 value={gdriveTitle}
                 onChange={(e) => setGdriveTitle(e.target.value)}
-                placeholder="e.g. Unit 3 Cloud Architecture & Security"
-                className="w-full bg-white border border-slate-300 rounded-xl px-3.5 py-2 text-xs text-slate-900 placeholder-slate-400 focus:outline-none focus:border-indigo-500 shadow-2xs"
+                placeholder="e.g. EC2 Virtual Servers & Database Architecture"
+                className="w-full bg-white border border-slate-300 rounded-xl px-3.5 py-2 text-xs text-slate-900 placeholder-slate-400 focus:outline-none focus:border-indigo-500 shadow-xs disabled:opacity-60 disabled:cursor-not-allowed"
               />
             </div>
-            <div className="space-y-1">
-              <label className="text-xs font-semibold text-slate-700">Google Public Share URL</label>
+
+            {/* 2. Google Public Share URL */}
+            <div className="sm:col-span-2">
+              <label className="block text-xs font-medium text-slate-600 mb-1">
+                Google Public Share URL (Drive, Docs, Slides, Sheets)
+              </label>
               <input
                 type="text"
+                disabled={gdriveImporting}
                 value={gdriveLink}
                 onChange={(e) => setGdriveLink(e.target.value)}
                 placeholder="https://docs.google.com/document/d/... or drive.google.com/file/d/..."
-                className="w-full bg-white border border-slate-300 rounded-xl px-3.5 py-2 text-xs text-slate-900 placeholder-slate-400 focus:outline-none focus:border-indigo-500 font-mono shadow-2xs"
+                className="w-full bg-white border border-slate-300 rounded-xl px-3.5 py-2 text-xs text-slate-900 placeholder-slate-400 focus:outline-none focus:border-indigo-500 font-mono shadow-xs disabled:opacity-60 disabled:cursor-not-allowed"
+              />
+            </div>
+
+            {/* 3. Subject / Course Name */}
+            <div>
+              <label className="block text-xs font-medium text-slate-600 mb-1">
+                Subject / Course Name
+              </label>
+              <input
+                type="text"
+                disabled={gdriveImporting}
+                list="gdrive-existing-subjects-list"
+                value={gdriveSubject}
+                onChange={(e) => setGdriveSubject(e.target.value)}
+                placeholder={effectiveSubject || "Type subject (e.g. Operating Systems, Cloud Computing)..."}
+                className="w-full bg-white border border-slate-300 rounded-xl px-3.5 py-2 text-xs text-slate-900 placeholder-slate-400 focus:outline-none focus:border-indigo-500 shadow-xs disabled:opacity-60 disabled:cursor-not-allowed"
+              />
+              {allSubjects.length > 0 && (
+                <datalist id="gdrive-existing-subjects-list">
+                  {allSubjects.map((s) => (
+                    <option key={s} value={s} />
+                  ))}
+                </datalist>
+              )}
+            </div>
+
+            {/* 4. Unit / Module Name */}
+            <div>
+              <label className="block text-xs font-medium text-slate-600 mb-1">
+                Unit / Module Name
+              </label>
+              <input
+                type="text"
+                disabled={gdriveImporting}
+                list="gdrive-existing-units-list"
+                value={gdriveUnit}
+                onChange={(e) => setGdriveUnit(e.target.value)}
+                placeholder={effectiveUnit || "Unit 1"}
+                className="w-full bg-white border border-slate-300 rounded-xl px-3.5 py-2 text-xs text-slate-900 placeholder-slate-400 focus:outline-none focus:border-indigo-500 shadow-xs disabled:opacity-60 disabled:cursor-not-allowed"
+              />
+              <datalist id="gdrive-existing-units-list">
+                <option value="Unit 1" />
+                <option value="Unit 2" />
+                <option value="Unit 3" />
+                <option value="Unit 4" />
+                <option value="Unit 5" />
+                <option value="Unit 6" />
+                <option value="Lab Manual" />
+                {allUnits.filter(u => !["Unit 1","Unit 2","Unit 3","Unit 4","Unit 5","Unit 6","Lab Manual"].includes(u)).map(u => (
+                  <option key={u} value={u} />
+                ))}
+              </datalist>
+            </div>
+
+            {/* 5. Unit Topic / Chapter Name (Optional) */}
+            <div>
+              <label className="block text-xs font-medium text-slate-600 mb-1">
+                Unit Topic / Chapter Name (Optional)
+              </label>
+              <input
+                type="text"
+                disabled={gdriveImporting}
+                value={gdriveUnitTitle}
+                onChange={(e) => setGdriveUnitTitle(e.target.value)}
+                placeholder="e.g. Compute Services & IaaS Deployments"
+                className="w-full bg-white border border-slate-300 rounded-xl px-3.5 py-2 text-xs text-slate-900 placeholder-slate-400 focus:outline-none focus:border-indigo-500 shadow-xs disabled:opacity-60 disabled:cursor-not-allowed"
+              />
+            </div>
+
+            {/* 6. Course Code / Semester (Optional) */}
+            <div>
+              <label className="block text-xs font-medium text-slate-600 mb-1">
+                Course Code / Semester (Optional)
+              </label>
+              <input
+                type="text"
+                disabled={gdriveImporting}
+                value={gdriveCourseCode}
+                onChange={(e) => setGdriveCourseCode(e.target.value)}
+                placeholder="e.g. MCA-204 or CS-301"
+                className="w-full bg-white border border-slate-300 rounded-xl px-3.5 py-2 text-xs text-slate-900 placeholder-slate-400 focus:outline-none focus:border-indigo-500 shadow-xs disabled:opacity-60 disabled:cursor-not-allowed"
+              />
+            </div>
+
+            {/* 7. Instructor Name (Optional) */}
+            <div>
+              <label className="block text-xs font-medium text-slate-600 mb-1">
+                Instructor Name (Optional)
+              </label>
+              <input
+                type="text"
+                disabled={gdriveImporting}
+                value={gdriveInstructor}
+                onChange={(e) => setGdriveInstructor(e.target.value)}
+                placeholder="e.g. Prof. Alan or Dr. Sharma"
+                className="w-full bg-white border border-slate-300 rounded-xl px-3.5 py-2 text-xs text-slate-900 placeholder-slate-400 focus:outline-none focus:border-indigo-500 shadow-xs disabled:opacity-60 disabled:cursor-not-allowed"
+              />
+            </div>
+
+            {/* 8. Student Visibility */}
+            <div className="flex flex-col justify-end">
+              <label className="block text-xs font-medium text-slate-600 mb-1">
+                Student Visibility
+              </label>
+              <button
+                type="button"
+                disabled={gdriveImporting}
+                onClick={() => setGdriveIsPublished(!gdriveIsPublished)}
+                className={`flex items-center gap-2 px-3 py-2 rounded-xl border text-xs font-semibold transition-all cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed ${
+                  gdriveIsPublished
+                    ? "bg-emerald-50 border-emerald-300 text-emerald-800"
+                    : "bg-slate-100 border-slate-300 text-slate-700"
+                }`}
+              >
+                {gdriveIsPublished ? (
+                  <>
+                    <Unlock className="w-3.5 h-3.5 text-emerald-600" />
+                    <span>🟢 Published (Visible to Students)</span>
+                  </>
+                ) : (
+                  <>
+                    <Lock className="w-3.5 h-3.5 text-amber-600" />
+                    <span>🟡 Save as Draft (Hidden)</span>
+                  </>
+                )}
+              </button>
+            </div>
+
+            {/* 9. Key Takeaways / Note Summary (full width) */}
+            <div className="sm:col-span-2 space-y-1">
+              <label className="block text-xs font-medium text-slate-600 mb-1 flex items-center justify-between">
+                <span>Optional Key Takeaways / Note Summary (Indexed for Student AI Tutor & Quizzes)</span>
+                <span className="text-[10px] text-slate-500">Public or Private Docs</span>
+              </label>
+              <textarea
+                rows={2}
+                disabled={gdriveImporting}
+                value={gdriveSummary}
+                onChange={(e) => setGdriveSummary(e.target.value)}
+                placeholder="e.g. Topics covered: IAM Policies, VPC Peering, S3 Bucket Encryption, and Auto-Scaling groups."
+                className="w-full bg-white border border-slate-300 rounded-xl px-3.5 py-2 text-xs text-slate-900 placeholder-slate-400 focus:outline-none focus:border-indigo-500 resize-none shadow-xs disabled:opacity-60 disabled:cursor-not-allowed"
               />
             </div>
           </div>
 
-          <div className="space-y-1">
-            <label className="text-xs font-semibold text-slate-700 flex items-center justify-between">
-              <span>Optional Key Takeaways / Note Summary (Indexed for Student AI Tutor & Quizzes)</span>
-              <span className="text-[10px] text-slate-500">Public or Private Docs</span>
-            </label>
-            <textarea
-              rows={2}
-              value={gdriveSummary}
-              onChange={(e) => setGdriveSummary(e.target.value)}
-              placeholder="e.g. Topics covered: IAM Policies, VPC Peering, S3 Bucket Encryption, and Auto-Scaling groups."
-              className="w-full bg-white border border-slate-300 rounded-xl px-3.5 py-2 text-xs text-slate-900 placeholder-slate-400 focus:outline-none focus:border-indigo-500 resize-none shadow-2xs"
-            />
-          </div>
-
           <div className="flex items-center justify-between pt-2 border-t border-slate-100 flex-wrap gap-3">
-            <div className="text-[11px] text-slate-600">
-              Assigned to: <span className="text-indigo-600 font-bold">{effectiveSubject}</span> &gt; <span className="text-amber-600 font-bold">{effectiveUnit}</span>
+            <div className="text-[11px] text-slate-500">
+              Destination: <strong className="text-slate-900 font-semibold">{effectiveGdriveSubject}</strong> &gt; <strong className="text-amber-700 font-semibold">{effectiveGdriveUnit}</strong>
             </div>
 
             <button
@@ -1071,61 +881,13 @@ export const TeacherPortal: React.FC<Props> = ({
                 </>
               ) : (
                 <>
-                  <ArrowRight className="w-4 h-4" />
+                  <Upload className="w-4 h-4" />
                   <span>Upload & Index Google Note</span>
                 </>
               )}
             </button>
           </div>
         </div>
-
-        {/* Global Modal Overlay During Upload to prevent any repeated clicks anywhere */}
-        {effectiveUploading && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-xs p-4 animate-in fade-in duration-200">
-            <div className="bg-white border-2 border-amber-500 rounded-3xl p-6 sm:p-8 max-w-md w-full shadow-2xl flex flex-col items-center text-center space-y-4">
-              <div className="relative w-16 h-16 flex items-center justify-center">
-                <div className="absolute inset-0 rounded-full border-4 border-amber-500/20 border-t-amber-500 animate-spin" />
-                <Upload className="w-7 h-7 text-amber-500 animate-pulse" />
-              </div>
-
-              <div>
-                <h3 className="text-base sm:text-lg font-extrabold text-slate-900">
-                  Uploading & Processing Document
-                </h3>
-                <p className="text-xs text-slate-600 mt-1 truncate max-w-[320px]">
-                  {selectedFile?.name || "Note file"}
-                </p>
-              </div>
-
-              <div className="w-full space-y-2">
-                <div className="w-full bg-slate-100 rounded-full h-3 overflow-hidden border border-slate-200 p-0.5">
-                  <div 
-                    className="bg-gradient-to-r from-amber-500 via-amber-400 to-emerald-400 h-full rounded-full transition-all duration-300"
-                    style={{ width: `${uploadPercent}%` }}
-                  />
-                </div>
-                <div className="flex items-center justify-between text-xs font-mono">
-                  <span className="text-amber-600 font-bold">{uploadPercent}% completed</span>
-                  <span className="text-slate-500">{effectiveUnit}</span>
-                </div>
-              </div>
-
-              <div className="text-xs text-slate-700 bg-slate-50 p-3 rounded-2xl border border-slate-200 w-full text-left space-y-1.5">
-                <div className="flex items-center gap-2 text-amber-600 font-bold">
-                  <span className="w-2 h-2 rounded-full bg-amber-500 animate-ping" />
-                  <span>Current Step:</span>
-                </div>
-                <div className="text-slate-700 text-xs pl-4 font-mono">
-                  {uploadStage || "Processing document & extracting slides..."}
-                </div>
-              </div>
-
-              <div className="bg-amber-50 border border-amber-200 rounded-2xl p-3 text-[11px] text-amber-900 leading-relaxed text-left">
-                <strong>Please wait:</strong> The teacher studio is parsing your lecture notes, rasterizing presentation slides, and generating AI search embeddings. <strong>Do not click upload again or close this window.</strong>
-              </div>
-            </div>
-          </div>
-        )}
 
         {/* Teacher Class Announcements & Notice Board */}
         <div className="bg-white border border-slate-200 rounded-3xl p-6 shadow-xs space-y-4">

@@ -2039,7 +2039,7 @@ Output ONLY valid JSON in this format:
   // POST /api/parse-google-link (Parse & index Google Drive / Docs / Slides links for RAG)
   app.post("/api/parse-google-link", async (req, res) => {
     try {
-      const { url, title, subject, unit, unitTitle, courseCode, uploadedBy, notesSummary } = req.body;
+      const { url, title, subject, unit, unitTitle, courseCode, uploadedBy, notesSummary, isPublished } = req.body;
       if (!url || typeof url !== "string" || !url.trim()) {
         return res.status(400).json({ error: "Google Link URL is required." });
       }
@@ -2133,7 +2133,7 @@ Output ONLY valid JSON in this format:
         courseCode: courseCode || "MCA-204",
         uploadedBy: uploadedBy || "Instructor",
         uploadedAt: new Date().toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }),
-        isPublished: true,
+        isPublished: isPublished !== undefined ? Boolean(isPublished) : true,
         fileFormat: "google-drive",
         originalFileUrl: cleanUrl,
         downloadUrl: cleanUrl,
@@ -2179,28 +2179,30 @@ Output ONLY valid JSON in this format:
     // If running in student mode and configured with a remote teacher service
     if (role === "student" || serverMode === "student") {
       const activeTeacherUrl = requestedTeacherUrl || teacherApiUrl;
-      if (activeTeacherUrl) {
+      if (activeTeacherUrl && !activeTeacherUrl.includes("student-notes-hub-2.onrender.com")) {
         const remote = await fetchFromTeacher("/api/documents?role=student", { teacherUrl: activeTeacherUrl });
         if (remote && Array.isArray(remote.documents)) {
           return res.json({ documents: remote.documents, source: "remote_teacher" });
         }
       }
-      const seenTitles = new Set();
+      const seenIds = new Set<string>();
       const uniqueDocs = serverDocuments.filter(d => {
-        const key = (d.title || "").toLowerCase().trim();
-        if (seenTitles.has(key)) return false;
-        seenTitles.add(key);
+        if (!d || !d.id) return false;
+        const idStr = String(d.id);
+        if (seenIds.has(idStr)) return false;
+        seenIds.add(idStr);
         return true;
       });
       const published = uniqueDocs.filter(d => d.isPublished !== false);
       return res.json({ documents: published });
     }
 
-    const seenTitlesAll = new Set();
+    const seenIdsAll = new Set<string>();
     const uniqueDocsAll = serverDocuments.filter(d => {
-      const key = (d.title || "").toLowerCase().trim();
-      if (seenTitlesAll.has(key)) return false;
-      seenTitlesAll.add(key);
+      if (!d || !d.id) return false;
+      const idStr = String(d.id);
+      if (seenIdsAll.has(idStr)) return false;
+      seenIdsAll.add(idStr);
       return true;
     });
     return res.json({ documents: uniqueDocsAll });

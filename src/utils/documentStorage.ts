@@ -275,16 +275,52 @@ export async function syncDocumentsWithServer(
     return [];
   }
 
-  // 2. For Teacher: Synchronize local cache to strictly match server
+  // 2. For Teacher: Smart Two-Way Merge so locally uploaded files are NEVER lost
   const deletedIds = getDeletedDocIdsSync();
+  const validServerDocs = Array.isArray(serverDocs)
+    ? serverDocs.filter(d => d && d.id && !deletedIds.has(String(d.id)))
+    : [];
 
-  if (Array.isArray(serverDocs)) {
-    const validServerDocs = serverDocs.filter(d => d && d.id && !deletedIds.has(String(d.id)));
-    await saveDocumentsToStorage(validServerDocs);
-    return validServerDocs;
+  // Load existing local storage documents that haven't been deleted
+  let localDocs: NoteDocument[] = [];
+  try {
+    localDocs = (await loadDocumentsFromStorage()).filter(d => d && d.id && !deletedIds.has(String(d.id)));
+  } catch {
+    localDocs = getStoredDocumentsSync().filter(d => d && d.id && !deletedIds.has(String(d.id)));
   }
 
-  return [];
+  // Build merged map by doc ID: server takes precedence for metadata updates, but local uploads are NEVER dropped
+  const mergedMap = new Map<string, NoteDocument>();
+
+  // First, add all valid server docs
+  validServerDocs.forEach(d => {
+    mergedMap.set(d.id, d);
+  });
+
+  // Next, keep any local document that isn't on the server yet (e.g. freshly uploaded or server disk cold restart)
+  const missingFromServer: NoteDocument[] = [];
+  localDocs.forEach(d => {
+    if (!mergedMap.has(d.id)) {
+      mergedMap.set(d.id, d);
+      missingFromServer.push(d);
+    }
+  });
+
+  const mergedList = Array.from(mergedMap.values());
+  await saveDocumentsToStorage(mergedList);
+
+  // If the server was missing any locally uploaded documents, re-hydrate the server database in background
+  if (missingFromServer.length > 0) {
+    apiFetch("/api/documents/sync", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ documents: mergedList, overwrite: false })
+    }).catch(err => {
+      console.warn("[Storage] Background server re-hydration notice:", err?.message || err);
+    });
+  }
+
+  return mergedList;
 }
 
 /**
