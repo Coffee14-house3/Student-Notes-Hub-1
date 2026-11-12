@@ -258,20 +258,14 @@ export const StudentApp: React.FC<Props> = ({ isStandalone = true, onSwitchPorta
             <GraduationCap className="w-4 h-4" />
           </div>
           <div>
-            <div className="flex items-center gap-2">
-              <span className="font-extrabold text-sm text-slate-900 tracking-tight">Student Notes Hub</span>
-              <span className="px-2 py-0.5 rounded-full bg-amber-50 text-amber-800 border border-amber-200 text-[10px] font-bold">
-                60 Students • MCA-204
-              </span>
-            </div>
-            <p className="hidden md:block text-[10px] text-slate-500">
-              Verified Course Materials • Google Notes Sandbox • ChromaDB AI Tutor
-            </p>
+            <span className="font-extrabold text-sm text-slate-900 tracking-tight">Student Notes Hub</span>
           </div>
         </div>
 
         {/* Right: Actions */}
         <div className="flex items-center gap-2 flex-wrap">
+
+
           {activeView !== "dashboard" && (
             <button
               onClick={() => {

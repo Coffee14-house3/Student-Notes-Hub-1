@@ -115,14 +115,7 @@ export const StudentPortal: React.FC<Props> = ({
                 </button>
               )}
 
-              <button
-                onClick={() => onOpenQuiz()}
-                className="px-4 py-2.5 rounded-xl bg-white hover:bg-slate-50 text-slate-700 border border-slate-300 text-xs font-semibold flex items-center gap-2 transition-all cursor-pointer shadow-xs hover:border-amber-500"
-                title="Practice with interactive quizzes"
-              >
-                <HelpCircle className="w-4 h-4 text-amber-500" />
-                <span>Practice Quiz</span>
-              </button>
+
 
               {syncStatus && (
                 <span className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-700 text-xs font-medium animate-fadeIn">
@@ -352,9 +345,7 @@ export const StudentPortal: React.FC<Props> = ({
             <span>Student Notes Hub — Verified Course Materials</span>
           </div>
           <div className="flex items-center gap-4 text-slate-500 text-[11px] flex-wrap">
-            <span>Interactive RAG Tutor Active</span>
-            <span>•</span>
-            <span>Self-Paced Practice Quiz</span>
+            <span>Interactive Course Notes Active</span>
           </div>
         </div>
 

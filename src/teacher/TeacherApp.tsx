@@ -40,10 +40,21 @@ export const TeacherApp: React.FC<Props> = ({ isStandalone = true, onSwitchPorta
     return getStoredAnnouncementsSync();
   });
 
-  // Automatically save documents whenever state updates
+  // Automatically save documents locally and sync to cloud server in background
   useEffect(() => {
     if (isInitializedRef.current) {
       saveDocumentsToStorage(documents);
+
+      // Automatic background sync to cloud database (no manual button needed)
+      const timer = setTimeout(() => {
+        apiFetch("/api/documents/sync", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ documents, overwrite: false })
+        }).catch(() => {});
+      }, 500);
+
+      return () => clearTimeout(timer);
     }
   }, [documents]);
 

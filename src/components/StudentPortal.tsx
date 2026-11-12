@@ -630,6 +630,15 @@ export const StudentPortal: React.FC<Props> = ({
                   <p className="text-xs text-slate-400 max-w-md mx-auto leading-relaxed">
                     No course notes have been published for this curriculum yet. Please check back soon or consult your instructor for updates.
                   </p>
+                  <div className="pt-2">
+                    <button
+                      type="button"
+                      onClick={() => window.location.reload()}
+                      className="px-4 py-2 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs rounded-xl transition-all cursor-pointer shadow-sm"
+                    >
+                      Check for Live Notes
+                    </button>
+                  </div>
                 </div>
               </div>
             ) : Object.keys(groupedBySubject).length === 0 ? (

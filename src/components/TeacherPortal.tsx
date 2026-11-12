@@ -198,6 +198,18 @@ export const TeacherPortal: React.FC<Props> = ({
         }
       }
 
+      // Explicitly sync updated documents list to cloud server
+      if (createdDoc) {
+        try {
+          const updatedList = [createdDoc, ...documents.filter(d => d.id !== createdDoc!.id)];
+          apiFetch("/api/documents/sync", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ documents: updatedList, overwrite: false })
+          }).catch(() => {});
+        } catch {}
+      }
+
       setGdriveLink("");
       setGdriveTitle("");
       setGdriveSummary("");
@@ -207,7 +219,7 @@ export const TeacherPortal: React.FC<Props> = ({
         ...prev,
         [targetSubj]: false
       }));
-      setGdriveSuccess(`✓ "${createdDoc?.title || title || "Note"}" successfully imported & indexed in ChromaDB Cloud (${chunksCount} semantic vector chunks). Available to students!`);
+      setGdriveSuccess(`✓ "${createdDoc?.title || title || "Note"}" successfully uploaded & indexed in Cloud! Available immediately to students.`);
       setTimeout(() => setGdriveSuccess(null), 8000);
     } catch (err: any) {
       setGdriveError(err?.message || "Failed to import Google Link");
@@ -592,28 +604,10 @@ export const TeacherPortal: React.FC<Props> = ({
               </p>
             </div>
 
-            {/* Quick Actions Header Buttons */}
-            <div className="flex flex-wrap sm:flex-nowrap items-center gap-2.5 shrink-0">
-              {(onRemoveUpdatedNotes || onRestoreDefaultNotes) && (
-                <button
-                  onClick={() => setShowResetConfirm(true)}
-                  className="px-3.5 py-2 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer shadow-xs hover:border-rose-300"
-                  title="Remove all updated and uploaded notes, restoring original notes"
-                >
-                  <RotateCcw className="w-4 h-4 text-rose-500" />
-                  <span>Remove Updated Notes</span>
-                  {documents.filter(d => d.id.startsWith("upload-") || d.id.includes("-copy") || d.id.includes("-merged")).length > 0 && (
-                    <span className="px-1.5 py-0.2 rounded-full bg-rose-500 text-white font-bold text-[10px]">
-                      {documents.filter(d => d.id.startsWith("upload-") || d.id.includes("-copy") || d.id.includes("-merged")).length}
-                    </span>
-                  )}
-                </button>
-              )}
-            </div>
           </div>
 
           {/* Quick Metrics Bar */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-6 pt-6 border-t border-purple-100 text-xs">
+          <div className="grid grid-cols-2 gap-3 mt-6 pt-6 border-t border-purple-100 text-xs">
             <div className="bg-white p-3 rounded-xl border border-slate-200 flex items-center gap-3 shadow-xs">
               <div className="p-2 rounded-lg bg-purple-50 text-purple-600 border border-purple-100">
                 <Folder className="w-4 h-4" />
@@ -631,26 +625,6 @@ export const TeacherPortal: React.FC<Props> = ({
               <div>
                 <div className="text-base font-bold text-slate-900">{publishedCount} Notes</div>
                 <div className="text-slate-500 text-[11px]">Published to Students</div>
-              </div>
-            </div>
-
-            <div className="bg-white p-3 rounded-xl border border-slate-200 flex items-center gap-3 shadow-xs">
-              <div className="p-2 rounded-lg bg-amber-50 text-amber-600 border border-amber-100">
-                <Lock className="w-4 h-4" />
-              </div>
-              <div>
-                <div className="text-base font-bold text-slate-900">{draftCount} Drafts</div>
-                <div className="text-slate-500 text-[11px]">Drafts / In-Review</div>
-              </div>
-            </div>
-
-            <div className="bg-white p-3 rounded-xl border border-slate-200 flex items-center gap-3 shadow-xs">
-              <div className="p-2 rounded-lg bg-sky-50 text-sky-600 border border-sky-100">
-                <Layers className="w-4 h-4" />
-              </div>
-              <div>
-                <div className="text-base font-bold text-slate-900">{totalPages} Pages</div>
-                <div className="text-slate-500 text-[11px]">Total Study Content</div>
               </div>
             </div>
           </div>
