@@ -23,7 +23,9 @@ import {
   deleteAnnouncementFromChroma,
   indexAllAnnouncementsToChroma,
   resetChromaDatabase,
-  queryChroma
+  queryChroma,
+  loadDocumentsFromChroma,
+  loadAnnouncementsFromChroma
 } from "./serverChroma";
 import { AutoScalingStorageManager } from "./serverStorageScaler";
 import { convertPptxToSlides } from "./server/converter.js";
@@ -391,10 +393,12 @@ async function callGroqChat(
 
 async function startServer() {
   const app = express();
-  // Support Render / cloud dynamic port assignment ($PORT) in production, but bind to port 3000 in dev (AI Studio requirement)
-  const PORT = process.env.NODE_ENV === "production" && process.env.PORT
-    ? parseInt(process.env.PORT, 10)
-    : 3000;
+  // Support Render / cloud dynamic port assignment ($PORT) in production, and honor CLI --port or default to 3000 in dev
+  const cliPortIdx = process.argv.indexOf("--port");
+  const cliPort = cliPortIdx !== -1 ? parseInt(process.argv[cliPortIdx + 1], 10) : NaN;
+  const PORT = !Number.isNaN(cliPort) && cliPort > 0
+    ? cliPort
+    : (process.env.NODE_ENV === "production" && process.env.PORT ? parseInt(process.env.PORT, 10) : 3000);
 
   // Instant health check for Render uptime monitoring
   app.get("/api/health", (req, res) => {
@@ -597,11 +601,54 @@ async function startServer() {
     }, delayMs);
   }
 
+  // Restore documents and announcements directly from ChromaDB Cloud if local ephemeral disk restarted empty
+  let lastChromaRecoveryMs = 0;
+  let chromaRecoveryPromise: Promise<void> | null = null;
+
+  async function recoverFromChromaIfEmpty(force = false): Promise<void> {
+    if (serverDocuments.length > 0 && serverAnnouncements.length > 0) return;
+    const now = Date.now();
+    if (!force && now - lastChromaRecoveryMs < 10000) return;
+    if (chromaRecoveryPromise) return chromaRecoveryPromise;
+
+    chromaRecoveryPromise = (async () => {
+      try {
+        lastChromaRecoveryMs = Date.now();
+        const ready = await initChroma();
+        if (!ready) return;
+
+        if (serverDocuments.length === 0) {
+          const chromaDocs = await loadDocumentsFromChroma();
+          const validDocs = chromaDocs.filter(d => d && d.id && !deletedDocTombstones.has(String(d.id)));
+          if (validDocs.length > 0) {
+            serverDocuments = validDocs;
+            ensureDataDir();
+            fs.writeFileSync(DOCS_FILE, JSON.stringify(serverDocuments, null, 2), "utf-8");
+            console.log(`[ChromaDB Recovery] Restored ${serverDocuments.length} note(s) from ChromaDB Cloud into active store.`);
+          }
+        }
+
+        if (serverAnnouncements.length === 0) {
+          const chromaAnns = await loadAnnouncementsFromChroma();
+          if (chromaAnns.length > 0) {
+            serverAnnouncements = chromaAnns;
+            ensureDataDir();
+            fs.writeFileSync(ANNOUNCEMENTS_FILE, JSON.stringify(serverAnnouncements, null, 2), "utf-8");
+            console.log(`[ChromaDB Recovery] Restored ${serverAnnouncements.length} announcement(s) from ChromaDB Cloud.`);
+          }
+        }
+      } catch (err: any) {
+        console.warn("[ChromaDB Recovery] Notice:", err?.message || err);
+      } finally {
+        chromaRecoveryPromise = null;
+      }
+    })();
+
+    return chromaRecoveryPromise;
+  }
+
   // Load any previously persisted data on server boot
   loadPersistedData();
-  
-  // Initial background auto-sync to ensure ChromaDB is always updated on server launch
-  triggerAutoChromaSync(2000);
 
   // Periodic automatic reconciliation every 5 minutes
   setInterval(() => {
@@ -1822,14 +1869,15 @@ Output ONLY valid JSON in this format:
       saveDocuments();
 
       // Automatically index newly parsed document into ChromaDB Cloud
+      let chunksIndexed = 0;
       try {
-        const indexedChunks = await indexDocumentToChroma(finalDoc);
-        console.log(`[ChromaDB] Document "${finalDoc.title}" auto-indexed (${indexedChunks} chunks)`);
+        chunksIndexed = await indexDocumentToChroma(finalDoc);
+        console.log(`[ChromaDB] Document "${finalDoc.title}" auto-indexed (${chunksIndexed} chunks)`);
       } catch (err: any) {
         console.warn("[ChromaDB] Document auto-indexing notice:", err?.message);
       }
 
-      return res.json({ document: finalDoc, provider: "Document Page Engine", format: fileFormat });
+      return res.json({ document: finalDoc, provider: "Document Page Engine", format: fileFormat, chunksIndexed });
 
     } catch (err: any) {
       console.error("Error in /api/parse-document:", err);
@@ -1987,6 +2035,18 @@ Output ONLY valid JSON in this format:
     }
   });
 
+  // Read reconstructed documents directly from ChromaDB Cloud (for student access & diagnostics)
+  app.get("/api/chroma/documents", async (req, res) => {
+    try {
+      const role = String(req.query.role || "all").toLowerCase();
+      const docs = await loadDocumentsFromChroma();
+      const filtered = role === "student" ? docs.filter(d => d.isPublished !== false) : docs;
+      res.json({ documents: filtered, count: filtered.length });
+    } catch (err: any) {
+      res.status(500).json({ error: err.message || "Failed to read documents from ChromaDB" });
+    }
+  });
+
   // GET /api/config (Portal deployment mode: student, teacher, or both)
   app.get("/api/config", (req, res) => {
     const configuredMode = (process.env.PORTAL_MODE || "").toLowerCase().trim();
@@ -2072,15 +2132,19 @@ Output ONLY valid JSON in this format:
         embedUrl = `https://drive.google.com/file/d/${fileId}/preview`;
       }
 
-      // Extract text content if public Google Doc export is accessible
+      // Extract text content if public Google Doc / Slides / Sheets export is accessible
       let extractedContent = "";
-      if (docMatch && fileId) {
+      if (fileId && (docMatch || presMatch || sheetMatch)) {
         try {
-          const exportUrl = `https://docs.google.com/document/d/${fileId}/export?format=txt`;
+          const exportUrl = docMatch
+            ? `https://docs.google.com/document/d/${fileId}/export?format=txt`
+            : presMatch
+            ? `https://docs.google.com/presentation/d/${fileId}/export?format=txt`
+            : `https://docs.google.com/spreadsheets/d/${fileId}/export?format=csv`;
           const fetchRes = await fetch(exportUrl, { headers: { "User-Agent": "CourseNotesHubBot/1.0" } });
           if (fetchRes.ok) {
             const rawTxt = await fetchRes.text();
-            if (rawTxt && rawTxt.trim().length > 30) {
+            if (rawTxt && rawTxt.trim().length > 30 && !rawTxt.trim().startsWith("<!DOCTYPE html")) {
               extractedContent = rawTxt.trim();
             }
           }
@@ -2166,7 +2230,7 @@ Output ONLY valid JSON in this format:
     }
   });
 
-  // GET /api/documents (filter by role or environment mode, with remote Teacher sync)
+  // GET /api/documents (filter by role or environment mode, with ChromaDB Cloud recovery & remote Teacher sync)
   app.get("/api/documents", async (req, res) => {
     res.setHeader("Cache-Control", "no-store, no-cache, must-revalidate, proxy-revalidate");
     res.setHeader("Pragma", "no-cache");
@@ -2175,6 +2239,11 @@ Output ONLY valid JSON in this format:
     const serverMode = (process.env.PORTAL_MODE || "").toLowerCase().trim();
     const role = (req.query.role as string) || (serverMode === "student" ? "student" : "all");
     const requestedTeacherUrl = (req.query.teacherUrl as string) || undefined;
+
+    // Ensure Student/Teacher requests recover saved notes from ChromaDB Cloud if local ephemeral disk started empty
+    if (serverDocuments.length === 0) {
+      await recoverFromChromaIfEmpty(false);
+    }
 
     // If running in student mode and configured with a remote teacher service
     if (role === "student" || serverMode === "student") {
@@ -2296,6 +2365,9 @@ Output ONLY valid JSON in this format:
       isPublished: Boolean(isPublished)
     };
     saveDocuments();
+    indexDocumentToChroma(serverDocuments[idx]).catch(e => {
+      console.warn("[ChromaDB] Publish state sync notice:", e?.message || e);
+    });
     return res.json({ document: serverDocuments[idx], success: true });
   });
 
@@ -2445,6 +2517,9 @@ Output ONLY valid JSON in this format:
 
           serverDocuments = [...filteredIncoming];
           saveDocuments();
+          indexAllDocumentsToChroma(serverDocuments).catch(err => {
+            console.warn("[ChromaDB] Overwrite sync re-index notice:", err?.message || err);
+          });
           return res.json({ success: true, count: serverDocuments.length, documents: serverDocuments });
         }
 
@@ -2479,11 +2554,15 @@ Output ONLY valid JSON in this format:
     }
   });
 
-  // GET /api/announcements (with remote Teacher sync)
+  // GET /api/announcements (with ChromaDB Cloud recovery & remote Teacher sync)
   app.get("/api/announcements", async (req, res) => {
     res.setHeader("Cache-Control", "no-store, no-cache, must-revalidate, proxy-revalidate");
     res.setHeader("Pragma", "no-cache");
     res.setHeader("Expires", "0");
+
+    if (serverAnnouncements.length === 0) {
+      await recoverFromChromaIfEmpty(false);
+    }
 
     if (teacherApiUrl) {
       const remote = await fetchFromTeacher("/api/announcements");
@@ -2573,7 +2652,8 @@ Output ONLY valid JSON in this format:
       try {
         const chromaPromise = queryChroma(prompt, {
           docId: activeDocument?.id,
-          nResults: 6
+          nResults: 6,
+          publishedOnly: req.body?.role !== "teacher"
         });
         const timeoutPromise = new Promise<any[]>((resolve) => setTimeout(() => resolve([]), 2500));
         const chromaMatches = await Promise.race([chromaPromise, timeoutPromise]);
@@ -3751,26 +3831,42 @@ ${extractedContent}
 
   // Vite middleware for dev / static serving for prod
   if (process.env.NODE_ENV !== "production") {
-    try {
-      const { createServer: createViteServer } = await import("vite");
-      const vite = await createViteServer({
-        server: { middlewareMode: true, hmr: false },
-        appType: "spa",
-      });
-      app.use(vite.middlewares);
-    } catch (viteErr) {
-      console.warn("[SERVER] Vite dev server middleware not available, falling back to static build:", (viteErr as any)?.message || viteErr);
-      const distPath = path.join(process.cwd(), "dist");
-      app.use(express.static(distPath));
-      app.get("*", (req, res) => {
-        const indexPath = path.join(distPath, "index.html");
-        if (fs.existsSync(indexPath)) {
-          res.sendFile(indexPath);
-        } else {
-          res.send("Course Notes Hub is starting up. Please refresh shortly.");
-        }
-      });
-    }
+    const distPath = path.join(process.cwd(), "dist");
+    const fallbackRouter = express.Router();
+    fallbackRouter.use(express.static(distPath));
+    fallbackRouter.get("*", (req, res) => {
+      const indexPath = path.join(distPath, "index.html");
+      if (fs.existsSync(indexPath)) {
+        res.sendFile(indexPath);
+      } else {
+        res.send("Course Notes Hub is starting up. Please refresh shortly.");
+      }
+    });
+
+    let viteMiddleware: ((req: express.Request, res: express.Response, next: express.NextFunction) => void) | null = null;
+    const viteReadyPromise = (async () => {
+      try {
+        const { createServer: createViteServer } = await import("vite");
+        const vite = await createViteServer({
+          server: { middlewareMode: true, hmr: false, ws: false },
+          appType: "spa",
+        });
+        viteMiddleware = vite.middlewares;
+        console.log("[SERVER] Vite dev middleware ready");
+      } catch (viteErr: any) {
+        console.warn("[SERVER] Vite dev server middleware not available, falling back to static build:", viteErr?.message || viteErr);
+        viteMiddleware = fallbackRouter;
+      }
+    })();
+
+    app.use((req, res, next) => {
+      if (viteMiddleware) {
+        return viteMiddleware(req, res, next);
+      }
+      viteReadyPromise
+        .then(() => (viteMiddleware || fallbackRouter)(req, res, next))
+        .catch(next);
+    });
   } else {
     const portalMode = (process.env.PORTAL_MODE || process.env.VITE_PORTAL_MODE || "").toLowerCase();
     let targetDist = "dist";
@@ -3792,15 +3888,19 @@ ${extractedContent}
     });
   }
 
-  app.listen(PORT, "0.0.0.0", () => {
+  const httpServer = app.listen(PORT, "0.0.0.0", () => {
     console.log(`Server running on http://0.0.0.0:${PORT}`);
 
     // Initialize ChromaDB Cloud vector database in background
     initChroma().then(async (ready) => {
       if (ready) {
+        // 1. Recover any notes saved in ChromaDB if local ephemeral disk started empty
+        await recoverFromChromaIfEmpty(true);
+
         const status = await getChromaStatus();
-        console.log(`[ChromaDB] Ready with ${status.vectorCount} indexed vector chunks in database "${status.database}"`);
-        // If empty, auto-seed initial documents and announcements into ChromaDB
+        console.log(`[ChromaDB] Ready with ${status.vectorCount} indexed vector chunks in database "${status.database}" (collection: ${status.collection})`);
+
+        // 2. If ChromaDB is empty while local storage has notes, seed ChromaDB automatically
         if (status.vectorCount === 0 && (serverDocuments.length > 0 || serverAnnouncements.length > 0)) {
           console.log(`[ChromaDB] Auto-indexing initial course notes and announcements...`);
           await indexAllDocumentsToChroma(serverDocuments);
@@ -3810,6 +3910,11 @@ ${extractedContent}
     }).catch((err) => {
       console.warn("[ChromaDB] Background startup notice:", err?.message);
     });
+  });
+
+  httpServer.on("error", (err: NodeJS.ErrnoException) => {
+    console.error(`[SERVER] Failed to bind 0.0.0.0:${PORT}:`, err?.message || err);
+    process.exit(1);
   });
 }
 
@@ -3823,4 +3928,5 @@ process.on("unhandledRejection", (reason) => {
 
 startServer().catch((err) => {
   console.error("Failed to start server:", err);
+  process.exit(1);
 });

@@ -8,18 +8,73 @@
   --sal: env(safe-area-inset-left, 0px);
 }
 
-html, body {
+html {
   background-color: #f8fafc;
   color: #0f172a;
-  overflow-x: hidden;
+  height: auto;
+  overflow-x: clip;
+  overflow-y: auto;
   -webkit-text-size-adjust: 100%;
   -webkit-tap-highlight-color: transparent;
-  touch-action: manipulation;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
 }
 
-/* Smooth touch scrolling momentum on iOS and Android */
-* {
-  -webkit-overflow-scrolling: touch;
+body {
+  background-color: #f8fafc;
+  color: #0f172a;
+  min-height: 100%;
+  height: auto;
+  overflow-x: clip;
+  overflow-y: visible;
+  padding-left: var(--sal);
+  padding-right: var(--sar);
+}
+
+h1, h2, h3 {
+  text-wrap: balance;
+}
+
+/* Utility to hide scrollbars on horizontal mobile chip/tab scrollers */
+.scrollbar-none {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.scrollbar-none::-webkit-scrollbar {
+  display: none;
+}
+
+/* Safe-area spacing helpers for notched phones */
+.pt-safe {
+  padding-top: max(0.5rem, var(--sat));
+}
+.pb-safe {
+  padding-bottom: max(0.75rem, var(--sab));
+}
+
+/* Mobile-first touch & form ergonomics (< 640px) */
+@media (max-width: 639px) {
+  /* Prevent automatic iOS Safari viewport zoom when tapping inputs or selects */
+  input:not([type="checkbox"]):not([type="radio"]),
+  textarea,
+  select {
+    font-size: 16px !important;
+  }
+
+  /* Tactile press feedback on touch devices */
+  button:not(:disabled):active,
+  [role="button"]:active {
+    transform: scale(0.98);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }
 
 /* Custom subtle scrollbars for touch & desktop mice */

@@ -40,10 +40,10 @@ export const SearchModal: React.FC<Props> = ({
   }
 
   return (
-    <div className="fixed inset-0 z-50 bg-slate-950/60 backdrop-blur-xs flex items-start justify-center p-4 sm:p-12">
-      <div className="w-full max-w-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-xl overflow-hidden flex flex-col text-xs">
+    <div className="fixed inset-0 z-50 bg-slate-950/60 backdrop-blur-xs flex items-start justify-center p-3 sm:p-12 pt-safe">
+      <div className="w-full max-w-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-xl overflow-hidden flex flex-col text-xs max-h-[85dvh] mt-2 sm:mt-0">
         {/* Search input bar */}
-        <div className="p-4 border-b border-slate-200 dark:border-slate-800 flex items-center gap-3">
+        <div className="p-3 sm:p-4 border-b border-slate-200 dark:border-slate-800 flex items-center gap-2.5 sm:gap-3">
           <Search className="w-4 h-4 text-amber-500 shrink-0" />
           <input
             type="text"
@@ -51,24 +51,25 @@ export const SearchModal: React.FC<Props> = ({
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Search keywords, definitions, sections..."
-            className="flex-1 bg-transparent border-none text-slate-900 dark:text-slate-100 placeholder:text-slate-400 focus:outline-none text-xs sm:text-sm font-medium"
+            className="flex-1 min-h-[40px] bg-transparent border-none text-slate-900 dark:text-slate-100 placeholder:text-slate-400 focus:outline-none text-base sm:text-sm font-medium"
           />
           <button
             onClick={onClose}
-            className="p-1 rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors"
+            className="min-w-[40px] min-h-[40px] flex items-center justify-center rounded-xl text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+            aria-label="Close Search"
           >
             <X className="w-4 h-4" />
           </button>
         </div>
 
         {/* Results container */}
-        <div className="max-h-96 overflow-y-auto p-2 divide-y divide-slate-100 dark:divide-slate-800/60">
+        <div className="max-h-[60dvh] sm:max-h-96 overflow-y-auto p-2 divide-y divide-slate-100 dark:divide-slate-800/60">
           {query.trim().length < 2 ? (
-            <div className="p-8 text-center text-slate-400">
+            <div className="p-8 text-center text-slate-400 text-xs sm:text-sm">
               Type at least 2 characters to search across all notes...
             </div>
           ) : results.length === 0 ? (
-            <div className="p-8 text-center text-slate-400">
+            <div className="p-8 text-center text-slate-400 text-xs sm:text-sm">
               No matching sections found for "{query}".
             </div>
           ) : (
@@ -79,15 +80,15 @@ export const SearchModal: React.FC<Props> = ({
                   onSelectResult(res.noteId, res.sectionId);
                   onClose();
                 }}
-                className="w-full text-left p-3 hover:bg-slate-50 dark:hover:bg-slate-800/80 rounded-xl transition-colors flex items-center justify-between group cursor-pointer"
+                className="w-full min-h-[52px] text-left p-3 sm:p-3 hover:bg-slate-50 dark:hover:bg-slate-800/80 rounded-xl transition-colors flex items-center justify-between group cursor-pointer"
               >
-                <div className="space-y-1 pr-4 min-w-0">
+                <div className="space-y-1 pr-3 min-w-0">
                   <div className="flex items-center gap-2">
                     <FileText className="w-3.5 h-3.5 text-amber-500 shrink-0" />
                     <span className="font-bold text-slate-800 dark:text-slate-200 group-hover:text-amber-500 transition-colors truncate">
                       {res.sectionTitle}
                     </span>
-                    <span className="text-[10px] text-slate-400 font-mono">
+                    <span className="text-[10px] text-slate-400 font-mono shrink-0">
                       (Page {res.pageNumber})
                     </span>
                   </div>
@@ -104,7 +105,7 @@ export const SearchModal: React.FC<Props> = ({
         {/* Footer info */}
         <div className="p-2.5 bg-slate-50 dark:bg-slate-950/40 border-t border-slate-200 dark:border-slate-800 text-[10px] text-slate-400 flex justify-between items-center px-4">
           <span>{results.length} results found</span>
-          <span>Press ESC to close</span>
+          <span className="hidden sm:inline">Press ESC to close</span>
         </div>
       </div>
     </div>

@@ -93,6 +93,7 @@ export interface NoteDocument {
   downloadUrl?: string;
   originalFileUrl?: string;
   originalFileName?: string;
+  embedUrl?: string;
 }
 
 export interface CourseAnnouncement {

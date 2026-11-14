@@ -135,48 +135,53 @@ export const ExportModal: React.FC<Props> = ({ isOpen, onClose, notes: propsNote
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-slate-950/60 backdrop-blur-xs flex items-center justify-center p-4">
-      <div className="w-full max-w-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-xl p-6 space-y-5 text-xs max-h-[90vh] overflow-y-auto">
-        <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-3 sticky top-0 bg-white dark:bg-slate-900 z-10">
-          <span className="font-bold text-slate-800 dark:text-slate-100 flex items-center gap-2 text-sm">
-            <Printer className="w-4 h-4 text-amber-500" /> Print & Export All 4 Notes Separately
+    <div className="fixed inset-0 z-50 bg-slate-950/60 backdrop-blur-xs flex items-end sm:items-center justify-center p-2 sm:p-4 pb-safe">
+      <div className="w-full max-w-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-xl p-4 sm:p-6 space-y-4 sm:space-y-5 text-xs max-h-[88dvh] overflow-y-auto">
+        <div className="flex items-center justify-between gap-2 border-b border-slate-200 dark:border-slate-800 pb-3 sticky top-0 bg-white dark:bg-slate-900 z-10">
+          <span className="font-bold text-slate-800 dark:text-slate-100 flex items-center gap-2 text-sm min-w-0">
+            <Printer className="w-4 h-4 text-amber-500 shrink-0" />
+            <span className="truncate">Print & Export Notes</span>
           </span>
-          <button onClick={onClose} className="p-1 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200">
+          <button
+            onClick={onClose}
+            className="min-w-[40px] min-h-[40px] flex items-center justify-center rounded-xl text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer shrink-0"
+            aria-label="Close Export Modal"
+          >
             <X className="w-4 h-4" />
           </button>
         </div>
 
         <p className="text-slate-600 dark:text-slate-300 leading-relaxed">
-          You can print or download each of the 4 AWS lecture notes individually, or print all 4 with clean page breaks between notes.
+          Print or download each lecture note individually, or print all with clean page breaks between notes.
         </p>
 
         {/* Global Bulk Buttons */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 sm:gap-3">
           <button
             onClick={handlePrintAllSeparately}
-            className="p-3 bg-amber-500 text-slate-950 font-bold rounded-xl flex items-center justify-between hover:bg-amber-400 transition-colors shadow-xs"
+            className="min-h-[44px] p-3 bg-amber-500 text-slate-950 font-bold rounded-xl flex items-center justify-between hover:bg-amber-400 transition-colors shadow-xs cursor-pointer"
           >
             <span className="flex items-center gap-2">
-              <Printer className="w-4 h-4" /> Print All 4 Notes (Separate Pages)
+              <Printer className="w-4 h-4 shrink-0" /> Print All Notes
             </span>
             <span className="text-[10px] bg-slate-950/10 px-1.5 py-0.5 rounded">PDF</span>
           </button>
 
           <button
             onClick={handleDownloadAllSeparately}
-            className="p-3 bg-slate-800 dark:bg-slate-800 text-slate-100 font-bold rounded-xl flex items-center justify-between hover:bg-slate-700 transition-colors shadow-xs"
+            className="min-h-[44px] p-3 bg-slate-800 dark:bg-slate-800 text-slate-100 font-bold rounded-xl flex items-center justify-between hover:bg-slate-700 transition-colors shadow-xs cursor-pointer"
           >
             <span className="flex items-center gap-2">
-              <Download className="w-4 h-4 text-amber-400" /> Download All 4 Notes (.html)
+              <Download className="w-4 h-4 text-amber-400 shrink-0" /> Download All (.html)
             </span>
-            <span className="text-[10px] bg-slate-700 px-1.5 py-0.5 rounded">4 Files</span>
+            <span className="text-[10px] bg-slate-700 px-1.5 py-0.5 rounded">{notes.length} Files</span>
           </button>
         </div>
 
         {/* Individual Note Cards */}
-        <div className="space-y-3 pt-2">
+        <div className="space-y-3 pt-1">
           <div className="font-semibold text-slate-700 dark:text-slate-300 text-xs flex items-center gap-1.5">
-            <Layers className="w-3.5 h-3.5 text-amber-500" /> Individual Notes (4 Separate Documents):
+            <Layers className="w-3.5 h-3.5 text-amber-500" /> Individual Notes ({notes.length}):
           </div>
 
           <div className="space-y-2.5">
@@ -185,19 +190,19 @@ export const ExportModal: React.FC<Props> = ({ isOpen, onClose, notes: propsNote
                 key={note.id}
                 className="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700/60 flex flex-col sm:flex-row sm:items-center justify-between gap-3"
               >
-                <div>
-                  <div className="font-bold text-slate-900 dark:text-slate-100 text-xs">
+                <div className="min-w-0">
+                  <div className="font-bold text-slate-900 dark:text-slate-100 text-xs truncate">
                     {note.title}
                   </div>
                   <div className="text-[11px] text-slate-500 dark:text-slate-400">
-                    {note.pageCount || 1} Pages • {note.sections?.length || 0} Core Topics
+                    {note.pageCount || 1} {(note.pageCount || 1) === 1 ? "Page" : "Pages"} · {note.sections?.length || 0} Core Topics
                   </div>
                 </div>
 
                 <div className="flex items-center gap-2 shrink-0">
                   <button
                     onClick={() => handlePrintSingleNote(note)}
-                    className="px-3 py-1.5 bg-amber-500/10 hover:bg-amber-500/20 text-amber-700 dark:text-amber-400 font-bold rounded-lg flex items-center gap-1.5 transition-colors text-xs"
+                    className="flex-1 sm:flex-initial min-h-[40px] sm:min-h-[34px] px-3 py-1.5 bg-amber-500/10 hover:bg-amber-500/20 text-amber-700 dark:text-amber-400 font-bold rounded-lg flex items-center justify-center gap-1.5 transition-colors text-xs cursor-pointer"
                     title={`Print ${note.shortTitle} only`}
                   >
                     <Printer className="w-3.5 h-3.5" /> Print
@@ -205,7 +210,7 @@ export const ExportModal: React.FC<Props> = ({ isOpen, onClose, notes: propsNote
 
                   <button
                     onClick={() => handleDownloadSingleNote(note)}
-                    className="px-3 py-1.5 bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 text-slate-800 dark:text-slate-200 font-medium rounded-lg flex items-center gap-1.5 transition-colors text-xs"
+                    className="flex-1 sm:flex-initial min-h-[40px] sm:min-h-[34px] px-3 py-1.5 bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 text-slate-800 dark:text-slate-200 font-medium rounded-lg flex items-center justify-center gap-1.5 transition-colors text-xs cursor-pointer"
                     title={`Download HTML for ${note.shortTitle}`}
                   >
                     {downloadedNoteId === note.id ? (

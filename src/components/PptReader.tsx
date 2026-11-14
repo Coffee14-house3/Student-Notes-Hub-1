@@ -44,7 +44,9 @@ export const PptReader: React.FC<PptReaderProps> = ({
   const sections = doc.sections || [];
   const totalSlides = Math.max(doc.pageCount || 1, sections.length || 1);
   const [currentSlide, setCurrentSlide] = useState<number>(Math.min(Math.max(1, initialSlide), totalSlides));
-  const [showThumbnails, setShowThumbnails] = useState<boolean>(true);
+  const [showThumbnails, setShowThumbnails] = useState<boolean>(() =>
+    typeof window !== "undefined" ? window.innerWidth >= 768 : true
+  );
   const [showSlideNotes, setShowSlideNotes] = useState<boolean>(false);
   const [zoom, setZoom] = useState<number>(100);
   const [isFullscreen, setIsFullscreen] = useState<boolean>(false);
@@ -199,14 +201,14 @@ export const PptReader: React.FC<PptReaderProps> = ({
     >
       {/* 1. PPT Reader Top Navigation Ribbon */}
       {!isFullscreen && (
-        <header className="h-14 bg-[#1e222d] border-b border-[#2d3345] px-3 sm:px-5 flex items-center justify-between gap-2 shrink-0 z-20 text-xs">
+        <header className="min-h-[52px] sm:h-14 bg-[#1e222d] border-b border-[#2d3345] px-2.5 sm:px-5 py-1.5 sm:py-0 flex items-center justify-between gap-2 shrink-0 z-20 text-xs">
           {/* Left: Document Info & PPT badge */}
-          <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+          <div className="flex items-center gap-1.5 sm:gap-3 min-w-0 flex-1">
             {onClose && (
               <button
                 type="button"
                 onClick={onClose}
-                className="p-1.5 rounded-lg bg-slate-800/80 hover:bg-slate-700 text-slate-300 hover:text-white transition-colors cursor-pointer shrink-0"
+                className="min-w-[38px] min-h-[38px] sm:min-w-0 sm:min-h-0 p-1.5 rounded-lg bg-slate-800/80 hover:bg-slate-700 text-slate-300 hover:text-white transition-colors cursor-pointer shrink-0 flex items-center justify-center"
                 title="Back to Dashboard (Esc)"
               >
                 <ArrowLeft className="w-4 h-4" />
@@ -215,7 +217,7 @@ export const PptReader: React.FC<PptReaderProps> = ({
 
             <button
               onClick={() => setShowThumbnails(!showThumbnails)}
-              className={`p-1.5 rounded-lg border transition-colors shrink-0 cursor-pointer ${
+              className={`min-w-[38px] min-h-[38px] sm:min-w-0 sm:min-h-0 p-1.5 rounded-lg border transition-colors shrink-0 cursor-pointer flex items-center justify-center ${
                 showThumbnails
                   ? "bg-amber-500/20 text-amber-400 border-amber-500/40"
                   : "bg-slate-800 text-slate-300 border-slate-700 hover:bg-slate-700"
@@ -226,11 +228,11 @@ export const PptReader: React.FC<PptReaderProps> = ({
             </button>
 
             {/* PPTX Badge */}
-            <div className="flex items-center gap-2 min-w-0">
+            <div className="hidden sm:flex items-center gap-2 min-w-0">
               <span className="px-2 py-0.5 rounded font-black text-[10px] tracking-wider uppercase bg-[#ea580c] text-white shadow-xs shrink-0">
                 PPTX
               </span>
-              <span className="font-bold text-slate-200 truncate max-w-[140px] xs:max-w-[180px] sm:max-w-[220px] text-xs sm:text-sm">
+              <span className="font-bold text-slate-200 truncate max-w-[140px] sm:max-w-[220px] text-xs sm:text-sm">
                 {doc.title}
               </span>
               {doc.unit && (
@@ -241,7 +243,7 @@ export const PptReader: React.FC<PptReaderProps> = ({
             </div>
 
             {/* Note Selector Dropdown */}
-            <div className="flex items-center relative ml-1">
+            <div className="flex items-center relative ml-0.5 sm:ml-1 flex-1 sm:flex-initial min-w-0">
               <select
                 value={isAllFilesView ? (activeView === "all-files-everything" ? "all-files-everything" : `all-unit-${effectiveUnit}`) : activeView}
                 onChange={(e) => {
@@ -254,7 +256,7 @@ export const PptReader: React.FC<PptReaderProps> = ({
                     setActiveView(val);
                   }
                 }}
-                className="bg-[#18181b] text-amber-400 font-extrabold border border-[#3a3a3c] hover:border-amber-500/50 rounded-lg pl-2.5 sm:pl-3 pr-6 sm:pr-7 py-1 sm:py-1.5 text-[11px] sm:text-xs cursor-pointer focus:outline-none focus:ring-1 focus:ring-amber-500 appearance-none shadow-inner max-w-[130px] xs:max-w-[160px] sm:max-w-[220px] truncate"
+                className="w-full sm:w-auto min-h-[38px] sm:min-h-0 bg-[#18181b] text-amber-400 font-extrabold border border-[#3a3a3c] hover:border-amber-500/50 rounded-lg pl-2.5 sm:pl-3 pr-7 py-1 sm:py-1.5 text-xs cursor-pointer focus:outline-none focus:ring-1 focus:ring-amber-500 appearance-none shadow-inner sm:max-w-[220px] truncate"
               >
                 {/* Unit All Files Options */}
                 <optgroup label="📚 All Files (Combined by Unit)" className="bg-[#18181c] text-amber-400 font-bold">
@@ -350,11 +352,11 @@ export const PptReader: React.FC<PptReaderProps> = ({
 
       {/* 2. Main Reader Viewport */}
       <div className="flex-1 flex overflow-hidden relative">
-        {/* Left Slide Thumbnails Sorter Filmstrip */}
+        {/* Left Slide Thumbnails Sorter Filmstrip (Overlay on mobile, side rail on md+) */}
         {showThumbnails && !isFullscreen && (
           <aside 
             ref={thumbnailListRef}
-            className="w-48 sm:w-56 md:w-64 bg-[#181a22] border-r border-[#2a2f3f] flex flex-col shrink-0 overflow-y-auto overflow-x-hidden p-2 sm:p-3 space-y-2 z-10"
+            className="absolute md:relative inset-y-0 left-0 w-56 md:w-64 bg-[#181a22] border-r border-[#2a2f3f] flex flex-col shrink-0 overflow-y-auto overflow-x-hidden p-2 sm:p-3 space-y-2 z-30 shadow-2xl md:shadow-none"
           >
             <div className="flex items-center justify-between pb-1.5 border-b border-slate-800 px-1 text-[11px] font-bold text-slate-400 uppercase tracking-wider">
               <span className="flex items-center gap-1.5">
@@ -463,7 +465,7 @@ export const PptReader: React.FC<PptReaderProps> = ({
           </button>
 
           {/* The Slide Canvas */}
-          <div className="flex flex-col items-center gap-10 w-full max-w-[1360px] mx-auto py-12 px-4">
+          <div className="flex flex-col items-center gap-5 sm:gap-10 w-full max-w-[1360px] mx-auto py-4 sm:py-12 px-2.5 sm:px-4">
             {Array.from({ length: totalSlides }, (_, idx) => {
               const slideNum = idx + 1;
               const slideImg = doc.slideImages?.[idx] || `/api/slide/${doc.id}/${slideNum}`;
@@ -517,7 +519,7 @@ export const PptReader: React.FC<PptReaderProps> = ({
           </div>
 
           {/* Bottom Floating Control Bar (Slide Pagination & Zoom) */}
-          <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-40 bg-[#181b24]/95 backdrop-blur-md border border-slate-700/80 text-white rounded-xl px-4 py-2 flex items-center gap-6 shadow-2xl">
+          <div className="fixed bottom-3 sm:bottom-6 left-1/2 -translate-x-1/2 z-40 bg-[#181b24]/95 backdrop-blur-md border border-slate-700/80 text-white rounded-xl px-3 sm:px-4 py-1.5 sm:py-2 flex items-center gap-3 sm:gap-6 shadow-2xl max-w-[calc(100vw-24px)]">
             {/* Slide Switcher */}
             <div className="flex items-center bg-slate-900/90 border border-slate-700/80 rounded-lg p-0.5 shadow-inner">
               <button

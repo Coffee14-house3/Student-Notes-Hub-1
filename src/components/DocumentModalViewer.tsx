@@ -738,7 +738,7 @@ export const DocumentModalViewer: React.FC<Props> = ({
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex flex-col bg-[#1e1e1e] text-slate-100 overflow-hidden font-sans select-text">
+    <div className="fixed inset-0 h-[100dvh] z-50 flex flex-col bg-[#1e1e1e] text-slate-100 overflow-hidden font-sans select-text pt-safe">
       {/* Top Horizontal PDF Browser Tab Strip */}
       <div className="bg-[#18181c] border-b border-[#33333d] flex items-center justify-between shrink-0 text-xs z-30">
         <div className="flex items-center gap-1 overflow-x-auto scrollbar-none px-2 pt-1.5 flex-1 min-w-0">
@@ -813,8 +813,8 @@ export const DocumentModalViewer: React.FC<Props> = ({
           </button>
         </div>
 
-        {/* Right Corner: Close File / Exit Viewer button pinned to right edge of tab bar */}
-        <div className="flex items-center px-2 shrink-0 border-l border-[#33333d]/60 bg-[#18181c]">
+        {/* Right Corner: Close File / Exit Viewer button pinned to right edge of tab bar (desktop/tablet; mobile uses main bar) */}
+        <div className="hidden sm:flex items-center px-2 shrink-0 border-l border-[#33333d]/60 bg-[#18181c]">
           <button
             type="button"
             onClick={handleCloseViewer}
@@ -823,38 +823,39 @@ export const DocumentModalViewer: React.FC<Props> = ({
             aria-label="Close file and return to notes dashboard"
           >
             <X className="w-3.5 h-3.5 text-slate-400 hover:text-red-400" />
-            <span className="hidden sm:inline">Close</span>
+            <span>Close</span>
           </button>
         </div>
       </div>
 
       {/* Top Document Preview Bar */}
-      <header className="min-h-12 bg-[#242424] border-b border-[#383838] px-2.5 sm:px-4 py-1.5 flex items-center justify-between gap-2 shrink-0 z-20 text-xs flex-wrap sm:flex-nowrap">
+      <header className="min-h-12 bg-[#242424] border-b border-[#383838] px-2 sm:px-4 py-1.5 flex items-center justify-between gap-1.5 sm:gap-2 shrink-0 z-20 text-xs">
         {/* Left: Dashboard Button, Sidebar Toggle, Document Icon & Note Dropdown */}
-        <div className="flex items-center gap-1.5 sm:gap-2.5 max-w-full overflow-x-auto">
+        <div className="flex items-center gap-1.5 sm:gap-2.5 flex-1 min-w-0">
           <button
             type="button"
             onClick={handleCloseViewer}
-            className="px-2.5 py-1.5 sm:px-3 sm:py-1.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-extrabold rounded-lg text-[11px] sm:text-xs flex items-center gap-1 sm:gap-1.5 transition-all shadow-md shrink-0 cursor-pointer"
+            className="min-h-[38px] sm:min-h-[34px] px-2.5 sm:px-3 py-1.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-extrabold rounded-lg text-[11px] sm:text-xs flex items-center gap-1.5 transition-all shadow-md shrink-0 cursor-pointer whitespace-nowrap"
             title="Return to Main Dashboard"
           >
             <LayoutGrid className="w-3.5 h-3.5" />
-            <span className="font-bold hidden xs:inline">Dashboard</span>
+            <span className="font-bold hidden sm:inline">Dashboard</span>
           </button>
 
           <button
             onClick={() => setShowThumbnails(!showThumbnails)}
-            className={`p-1.5 rounded-lg border border-[#383838] transition-colors shrink-0 ${
+            className={`min-w-[38px] min-h-[38px] sm:min-w-[34px] sm:min-h-[34px] p-1.5 rounded-lg border border-[#383838] transition-colors shrink-0 flex items-center justify-center ${
               showThumbnails ? "bg-amber-500/20 text-amber-400 border-amber-500/40" : "bg-[#18181a] text-slate-300 hover:text-white hover:bg-white/10"
             }`}
             title="Toggle Page Thumbnails Sidebar"
+            aria-label="Toggle Page Thumbnails Sidebar"
           >
             <PanelLeft className="w-4 h-4" />
           </button>
 
-          <div className="flex items-center gap-2 shrink">
+          <div className="flex items-center flex-1 min-w-0 max-w-full sm:max-w-[320px] md:max-w-[380px]">
             {/* Note Selector Dropdown */}
-            <div className="flex items-center relative">
+            <div className="flex items-center relative w-full min-w-0">
               <select
                 value={isAllFilesView ? (activeView === "all-files-everything" ? "all-files-everything" : `all-unit-${effectiveUnit}`) : activeView}
                 onChange={(e) => {
@@ -866,21 +867,21 @@ export const DocumentModalViewer: React.FC<Props> = ({
                   setActiveView(val);
                   setCurrentPage(1);
                 }}
-                className="bg-[#18181b] text-amber-400 font-extrabold border border-[#3a3a3c] hover:border-amber-500/50 rounded-lg pl-2.5 sm:pl-3 pr-6 sm:pr-7 py-1 sm:py-1.5 text-[11px] sm:text-xs cursor-pointer focus:outline-none focus:ring-1 focus:ring-amber-500 appearance-none shadow-inner max-w-[140px] xs:max-w-[190px] sm:max-w-[280px] md:max-w-[360px] truncate"
+                className="w-full min-h-[38px] sm:min-h-[34px] bg-[#18181b] text-amber-400 font-extrabold border border-[#3a3a3c] hover:border-amber-500/50 rounded-lg pl-2.5 sm:pl-3 pr-7 py-1 sm:py-1.5 text-xs cursor-pointer focus:outline-none focus:ring-1 focus:ring-amber-500 appearance-none shadow-inner truncate"
               >
                 {/* Unit All Files Options */}
-                <optgroup label="📚 All Files (Combined by Unit)" className="bg-[#18181c] text-amber-400 font-bold">
+                <optgroup label="All Files (Combined by Unit)" className="bg-[#18181c] text-amber-400 font-bold">
                   {allUnits.map((u) => {
                     const count = notesByUnit[u]?.length || 0;
                     return (
                       <option key={`all-unit-${u}`} value={`all-unit-${u}`} className="bg-[#2c2c2c] text-amber-400 font-bold">
-                        📚 All {u} Notes ({count} {count === 1 ? 'File' : 'Files'})
+                        All {u} Notes ({count} {count === 1 ? 'File' : 'Files'})
                       </option>
                     );
                   })}
                   {allUnits.length > 1 && (
                     <option value="all-files-everything" className="bg-[#2c2c2c] text-amber-300 font-semibold">
-                      📚 All Course Notes (All Units Combined)
+                      All Course Notes (All Units Combined)
                     </option>
                   )}
                 </optgroup>
@@ -890,7 +891,7 @@ export const DocumentModalViewer: React.FC<Props> = ({
                   const unitDocs = notesByUnit[unitName] || [];
                   if (unitDocs.length === 0) return null;
                   return (
-                    <optgroup key={unitName} label={`📁 ${unitName}`} className="bg-[#18181c] text-slate-300 font-semibold">
+                    <optgroup key={unitName} label={unitName} className="bg-[#18181c] text-slate-300 font-semibold">
                       {unitDocs.map((n) => (
                         <option key={n.id} value={n.id} className="bg-[#2c2c2c] text-white font-medium">
                           {n.shortTitle || n.title}
@@ -900,23 +901,23 @@ export const DocumentModalViewer: React.FC<Props> = ({
                   );
                 })}
               </select>
-              <ChevronDown className="w-3.5 h-3.5 text-amber-400 absolute right-1.5 sm:right-2 pointer-events-none" />
+              <ChevronDown className="w-3.5 h-3.5 text-amber-400 absolute right-2 pointer-events-none" />
             </div>
           </div>
         </div>
 
 
         {/* Right Tools: Ask AI & Close Button */}
-        <div className="flex items-center gap-2 shrink-0">
+        <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
           {isPptxDoc && (
             <button
               type="button"
               onClick={() => setViewMode("ppt")}
-              className="flex items-center gap-1 sm:gap-1.5 px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-lg text-[11px] sm:text-xs font-bold transition-all shadow-md bg-amber-500 hover:bg-amber-400 text-slate-950 cursor-pointer"
+              className="min-h-[38px] sm:min-h-[34px] flex items-center gap-1 sm:gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-lg text-[11px] sm:text-xs font-bold transition-all shadow-md bg-amber-500 hover:bg-amber-400 text-slate-950 cursor-pointer whitespace-nowrap"
               title="Open PowerPoint Reader mode"
             >
               <Tv className="w-3.5 h-3.5" />
-              <span>PPT Reader</span>
+              <span className="hidden sm:inline">PPT Reader</span>
             </button>
           )}
 
@@ -924,11 +925,11 @@ export const DocumentModalViewer: React.FC<Props> = ({
             <a
               href={activeDoc?.downloadUrl || activeDoc?.originalFileUrl || `/api/download/${activeDoc?.id}`}
               download={activeDoc?.originalFileName || `${activeDoc?.title || "presentation"}.pptx`}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-extrabold transition-all shadow-lg bg-orange-600 hover:bg-orange-500 text-white border border-orange-400 cursor-pointer animate-pulse"
-              title="Download your exact untouched original PowerPoint presentation (.pptx)"
+              className="min-h-[38px] sm:min-h-[34px] flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-lg text-xs font-extrabold transition-all shadow-lg bg-orange-600 hover:bg-orange-500 text-white border border-orange-400 cursor-pointer whitespace-nowrap"
+              title="Download original PowerPoint presentation (.pptx)"
             >
-              <Download className="w-4 h-4 text-white" />
-              <span>📥 Download Original PPT File</span>
+              <Download className="w-3.5 h-3.5 text-white" />
+              <span className="hidden md:inline">Download Original PPT</span>
             </a>
           )}
 
@@ -936,7 +937,7 @@ export const DocumentModalViewer: React.FC<Props> = ({
           <button
             type="button"
             onClick={handleToggleAiPanel}
-            className={`flex items-center gap-1 sm:gap-1.5 px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-lg text-[11px] sm:text-xs font-extrabold transition-all shadow-md cursor-pointer ${
+            className={`min-h-[38px] sm:min-h-[34px] flex items-center gap-1 sm:gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-lg text-[11px] sm:text-xs font-extrabold transition-all shadow-md cursor-pointer whitespace-nowrap ${
               effectiveAiChatOpen 
                 ? "bg-amber-400 text-slate-950 ring-2 ring-amber-300/60 font-extrabold" 
                 : "bg-amber-500 hover:bg-amber-400 text-slate-950"
@@ -952,8 +953,9 @@ export const DocumentModalViewer: React.FC<Props> = ({
             <button
               type="button"
               onClick={() => setShowDeleteModal(true)}
-              className="flex items-center gap-1 sm:gap-1.5 px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-lg text-[11px] sm:text-xs font-bold transition-all shadow-md bg-rose-950/40 hover:bg-rose-600 text-rose-300 hover:text-white border border-rose-800/60 hover:border-rose-500 cursor-pointer"
+              className="min-w-[38px] min-h-[38px] sm:min-w-[34px] sm:min-h-[34px] flex items-center justify-center gap-1 sm:gap-1.5 px-2 sm:px-3 py-1.5 rounded-lg text-[11px] sm:text-xs font-bold transition-all shadow-md bg-rose-950/40 hover:bg-rose-600 text-rose-300 hover:text-white border border-rose-800/60 hover:border-rose-500 cursor-pointer whitespace-nowrap"
               title="Permanently Delete Note and Remove from ChromaDB"
+              aria-label="Delete note"
             >
               <Trash2 className="w-3.5 h-3.5" />
               <span className="hidden sm:inline">Delete</span>
@@ -964,12 +966,12 @@ export const DocumentModalViewer: React.FC<Props> = ({
           <button
             type="button"
             onClick={handleCloseViewer}
-            className="flex items-center gap-1 sm:gap-1.5 px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-lg text-[11px] sm:text-xs font-bold transition-all shadow-md bg-[#2d2d32] hover:bg-red-500/20 text-slate-200 hover:text-red-300 border border-[#3e3e46] hover:border-red-500/40 cursor-pointer group"
+            className="min-w-[38px] min-h-[38px] sm:min-w-[34px] sm:min-h-[34px] flex items-center justify-center gap-1 sm:gap-1.5 px-2 sm:px-3 py-1.5 rounded-lg text-[11px] sm:text-xs font-bold transition-all shadow-md bg-[#2d2d32] hover:bg-red-500/20 text-slate-200 hover:text-red-300 border border-[#3e3e46] hover:border-red-500/40 cursor-pointer group whitespace-nowrap"
             title="Close file and return to notes portal (Esc)"
             aria-label="Close document"
           >
-            <X className="w-3.5 h-3.5 text-slate-400 group-hover:text-red-400 transition-colors" />
-            <span>Close</span>
+            <X className="w-4 h-4 text-slate-400 group-hover:text-red-400 transition-colors" />
+            <span className="hidden sm:inline">Close</span>
           </button>
         </div>
       </header>
@@ -984,7 +986,7 @@ export const DocumentModalViewer: React.FC<Props> = ({
               className="fixed inset-0 bg-black/60 backdrop-blur-xs z-30 sm:hidden"
               onClick={() => setShowThumbnails(false)}
             />
-            <aside className="fixed inset-y-0 left-0 top-14 w-64 sm:static sm:w-56 bg-[#252526] border-r border-[#3c3c3c] flex flex-col shrink-0 z-40 sm:z-10 shadow-2xl sm:shadow-none transition-all">
+            <aside className="fixed inset-y-0 left-0 top-[5.25rem] sm:static w-72 sm:w-56 bg-[#252526] border-r border-[#3c3c3c] flex flex-col shrink-0 z-40 sm:z-10 shadow-2xl sm:shadow-none transition-all pb-safe">
               <div className="p-3 border-b border-[#3c3c3c] flex items-center justify-between text-xs font-semibold text-slate-400">
                 <span className="flex items-center gap-1.5">
                   <Grid className="w-3.5 h-3.5 text-amber-500" /> {isPptxDoc ? "Slide Thumbnails" : "Page Thumbnails"}
@@ -1131,7 +1133,7 @@ export const DocumentModalViewer: React.FC<Props> = ({
           ) : viewMode === "drive-sandbox" ? (
             <div className="w-full h-full flex flex-col md:flex-row bg-[#1e1e1e] overflow-hidden relative">
               {/* Left: Live Google Drive Note Viewer / Iframe Sandbox */}
-              <div className="flex-1 flex flex-col bg-slate-950 border-r border-[#3c3c3c] overflow-hidden">
+              <div className="h-[46dvh] md:h-full md:flex-1 flex flex-col bg-slate-950 border-b md:border-b-0 md:border-r border-[#3c3c3c] overflow-hidden shrink-0">
                 <div className="bg-[#2d2d32] px-4 py-2.5 border-b border-[#3c3c3c] flex items-center justify-between text-xs text-slate-300">
                   <span className="font-bold flex items-center gap-1.5 text-amber-400">
                     <ExternalLink className="w-4 h-4" /> Google Drive Notes Sandbox
@@ -1158,7 +1160,7 @@ export const DocumentModalViewer: React.FC<Props> = ({
               </div>
 
               {/* Right: RAG Application Chat Panel */}
-              <div className="w-full md:w-[420px] lg:w-[480px] bg-[#1e1e1e] border-l border-[#3c3c3c] flex flex-col shadow-2xl z-20">
+              <div className="flex-1 md:flex-none w-full md:w-[420px] lg:w-[480px] min-h-0 bg-[#1e1e1e] border-l border-[#3c3c3c] flex flex-col shadow-2xl z-20">
                 <div className="bg-[#2d2d32] px-4 py-2.5 border-b border-[#3c3c3c] flex items-center justify-between text-xs font-bold text-white">
                   <span className="flex items-center gap-1.5 text-amber-400">
                     <Sparkles className="w-4 h-4" /> RAG Application AI Tutor (Notes Q&A)
@@ -1201,8 +1203,8 @@ export const DocumentModalViewer: React.FC<Props> = ({
             </div>
           ) : !isPptxDoc && viewMode === "split" && (activeDoc?.pdfUrl || activeDoc?.pdfDataUrl) ? (
             /* Split View: Side-by-side Original PDF Canvas and AI Notes */
-            <div className="w-full h-[calc(100vh-5.5rem)] grid grid-cols-1 lg:grid-cols-2 gap-4 p-2 sm:p-4 overflow-hidden">
-              <div className="h-full overflow-hidden">
+            <div className="w-full h-[calc(100dvh-5.5rem)] grid grid-cols-1 lg:grid-cols-2 gap-3 sm:gap-4 p-2 sm:p-4 overflow-y-auto lg:overflow-hidden">
+              <div className="h-[46dvh] lg:h-full overflow-hidden">
                 <PdfCanvasViewer
                   pdfUrl={(!isGoogleDriveDoc && !activeDoc?.id?.startsWith("glink-") && !activeDoc?.id?.startsWith("all-") && !activeDoc?.pdfUrl?.includes("glink-")) ? (activeDoc.pdfUrl || (activeDoc.id ? `/api/pdf/${activeDoc.id}` : undefined)) : undefined}
                   pdfDataUrl={activeDoc.pdfDataUrl}
@@ -1214,7 +1216,7 @@ export const DocumentModalViewer: React.FC<Props> = ({
                   shortTitle={activeDoc.shortTitle || activeDoc.title}
                 />
               </div>
-              <div className="h-full overflow-y-auto p-6 bg-white text-slate-900 rounded-xl shadow-2xl border border-slate-300 font-sans text-xs sm:text-[14px]">
+              <div className="min-h-[40dvh] lg:h-full overflow-y-auto p-4 sm:p-6 bg-white text-slate-900 rounded-xl shadow-2xl border border-slate-300 font-sans text-xs sm:text-[14px]">
                 <div className="text-xs font-bold text-amber-700 uppercase tracking-wide mb-1">AI Extracted Page Notes</div>
                 <h2 className="text-lg font-bold mb-4 border-b pb-2 text-slate-900">
                   {activeSections[currentPage - 1]?.title || `Page ${currentPage}`}
@@ -1285,13 +1287,13 @@ export const DocumentModalViewer: React.FC<Props> = ({
             </div>
           )}
 
-          {/* Floating Page Badge Overlay Bottom Left (Matching Screenshot) */}
+          {/* Floating Page Badge Overlay Bottom Left */}
           {activeView !== "quiz" && viewMode !== "pdf" && !isGoogleDriveDoc && (
-            <div className="fixed bottom-6 left-6 z-30 flex items-center gap-2 bg-white/95 dark:bg-[#202025]/95 backdrop-blur-md px-3.5 py-1.5 rounded-lg border border-slate-300 dark:border-[#383842] shadow-xl text-xs font-mono font-bold text-slate-800 dark:text-slate-100">
-              <span className="px-2 py-0.5 rounded bg-slate-100 dark:bg-[#121215] border border-slate-300 dark:border-[#3a3a42] font-extrabold text-slate-900 dark:text-white">
+            <div className="fixed bottom-3 left-3 sm:bottom-6 sm:left-6 z-30 flex items-center gap-2 bg-white/95 dark:bg-[#202025]/95 backdrop-blur-md px-3 py-1.5 rounded-lg border border-slate-300 dark:border-[#383842] shadow-xl text-xs font-mono font-bold text-slate-800 dark:text-slate-100">
+              <span className="px-2 py-0.5 rounded bg-slate-100 dark:bg-[#121215] border border-slate-300 dark:border-[#3a3a42] font-extrabold text-slate-900 dark:text-white tabular-nums">
                 {isPptxDoc ? `Slide ${currentPage}` : currentPage}
               </span>
-              <span className="text-slate-400">{isPptxDoc ? `of ${totalPages}` : totalPages}</span>
+              <span className="text-slate-400 tabular-nums">{isPptxDoc ? `of ${totalPages}` : totalPages}</span>
             </div>
           )}
 

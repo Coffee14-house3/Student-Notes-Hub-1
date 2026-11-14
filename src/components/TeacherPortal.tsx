@@ -219,7 +219,11 @@ export const TeacherPortal: React.FC<Props> = ({
         ...prev,
         [targetSubj]: false
       }));
-      setGdriveSuccess(`✓ "${createdDoc?.title || title || "Note"}" successfully uploaded & indexed in Cloud! Available immediately to students.`);
+      setGdriveSuccess(
+        chunksCount > 0
+          ? `✓ "${createdDoc?.title || title || "Note"}" uploaded & saved to ChromaDB (${chunksCount} vector chunks)!`
+          : `✓ "${createdDoc?.title || title || "Note"}" uploaded & published for students (ChromaDB vector sync skipped — check backend CHROMA_API_KEY).`
+      );
       setTimeout(() => setGdriveSuccess(null), 8000);
     } catch (err: any) {
       setGdriveError(err?.message || "Failed to import Google Link");
@@ -577,25 +581,23 @@ export const TeacherPortal: React.FC<Props> = ({
   const draftCount = documents.filter(d => d.isPublished === false).length;
 
   return (
-    <div className="flex-1 bg-slate-50 text-slate-900 p-4 sm:p-8 overflow-y-auto min-h-screen">
-      <div className="max-w-6xl mx-auto space-y-8">
+    <div className="flex-1 bg-slate-50 text-slate-900 p-3 sm:p-6 lg:p-8 min-h-[100dvh] pb-safe">
+      <div className="max-w-6xl mx-auto space-y-5 sm:space-y-8">
         
         {/* Teacher Studio Header */}
-        <div className="bg-gradient-to-r from-purple-50 via-white to-indigo-50 border border-purple-200 rounded-3xl p-6 sm:p-8 shadow-xs relative overflow-hidden">
+        <div className="bg-gradient-to-r from-purple-50 via-white to-indigo-50 border border-purple-200 rounded-2xl sm:rounded-3xl p-4 sm:p-8 shadow-xs relative overflow-hidden">
           <div className="absolute top-0 right-0 w-96 h-96 bg-purple-500/5 rounded-full blur-3xl pointer-events-none" />
           
-          <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 relative z-10">
+          <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 sm:gap-6 relative z-10">
             <div className="space-y-2 max-w-2xl">
-              <div className="flex items-center gap-2 flex-wrap">
-                <span className="px-3 py-1 rounded-full bg-purple-100 text-purple-800 border border-purple-200 text-xs font-bold uppercase tracking-wide flex items-center gap-1.5 shadow-xs">
-                  <BookOpen className="w-4 h-4 text-purple-600" /> Teacher & Instructor Studio
-                </span>
-                <span className="px-2.5 py-0.5 rounded-full bg-slate-100 text-slate-700 border border-slate-200 text-xs font-medium">
-                  Subject & Unit Curriculum Manager
-                </span>
+              <div className="flex items-center gap-2 text-xs font-semibold text-purple-800 flex-wrap">
+                <BookOpen className="w-4 h-4 text-purple-600 shrink-0" />
+                <span>Teacher & Instructor Studio</span>
+                <span aria-hidden="true" className="text-slate-300">·</span>
+                <span className="text-slate-600 font-medium">Subject & Unit Curriculum Manager</span>
               </div>
               
-              <h1 className="text-2xl sm:text-4xl font-extrabold text-slate-900 tracking-tight">
+              <h1 className="text-xl sm:text-4xl font-extrabold text-slate-900 tracking-tight">
                 Course Notes Studio
               </h1>
               
@@ -607,24 +609,24 @@ export const TeacherPortal: React.FC<Props> = ({
           </div>
 
           {/* Quick Metrics Bar */}
-          <div className="grid grid-cols-2 gap-3 mt-6 pt-6 border-t border-purple-100 text-xs">
-            <div className="bg-white p-3 rounded-xl border border-slate-200 flex items-center gap-3 shadow-xs">
-              <div className="p-2 rounded-lg bg-purple-50 text-purple-600 border border-purple-100">
+          <div className="grid grid-cols-2 gap-2.5 sm:gap-3 mt-5 sm:mt-6 pt-5 sm:pt-6 border-t border-purple-100 text-xs">
+            <div className="bg-white p-3 rounded-xl border border-slate-200 flex items-center gap-2.5 sm:gap-3 shadow-xs min-w-0">
+              <div className="p-2 rounded-lg bg-purple-50 text-purple-600 border border-purple-100 shrink-0">
                 <Folder className="w-4 h-4" />
               </div>
-              <div>
-                <div className="text-base font-bold text-slate-900">{allSubjects.length} Subjects</div>
-                <div className="text-slate-500 text-[11px]">{allUnits.length} Units Active</div>
+              <div className="min-w-0">
+                <div className="text-sm sm:text-base font-bold text-slate-900 tabular-nums truncate">{allSubjects.length} Subjects</div>
+                <div className="text-slate-500 text-[11px] truncate tabular-nums">{allUnits.length} Units Active</div>
               </div>
             </div>
 
-            <div className="bg-white p-3 rounded-xl border border-slate-200 flex items-center gap-3 shadow-xs">
-              <div className="p-2 rounded-lg bg-emerald-50 text-emerald-600 border border-emerald-100">
+            <div className="bg-white p-3 rounded-xl border border-slate-200 flex items-center gap-2.5 sm:gap-3 shadow-xs min-w-0">
+              <div className="p-2 rounded-lg bg-emerald-50 text-emerald-600 border border-emerald-100 shrink-0">
                 <CheckCircle2 className="w-4 h-4" />
               </div>
-              <div>
-                <div className="text-base font-bold text-slate-900">{publishedCount} Notes</div>
-                <div className="text-slate-500 text-[11px]">Published to Students</div>
+              <div className="min-w-0">
+                <div className="text-sm sm:text-base font-bold text-slate-900 tabular-nums truncate">{publishedCount} Notes</div>
+                <div className="text-slate-500 text-[11px] truncate">Published to Students</div>
               </div>
             </div>
           </div>
@@ -632,19 +634,19 @@ export const TeacherPortal: React.FC<Props> = ({
 
 
         {/* Google Drive / Google Docs / Slides Link Importer Card */}
-        <div id="google-link-upload-card" className="bg-white border border-slate-200 rounded-3xl p-6 sm:p-8 shadow-xs space-y-5">
-          <div className="flex items-center justify-between border-b border-slate-100 pb-3 flex-wrap gap-2">
-            <div className="flex items-center gap-2.5">
-              <div className="p-2 bg-indigo-50 border border-indigo-100 rounded-xl text-indigo-600">
+        <div id="google-link-upload-card" className="bg-white border border-slate-200 rounded-2xl sm:rounded-3xl p-4 sm:p-8 shadow-xs space-y-4 sm:space-y-5">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-slate-100 pb-3 gap-2">
+            <div className="flex items-center gap-2.5 min-w-0">
+              <div className="p-2 bg-indigo-50 border border-indigo-100 rounded-xl text-indigo-600 shrink-0">
                 <HardDrive className="w-5 h-5" />
               </div>
-              <div>
+              <div className="min-w-0">
                 <h2 className="font-bold text-slate-900 text-base sm:text-lg">Upload Course Notes via Google Link</h2>
                 <p className="text-xs text-slate-500">Fast cloud indexing for Google Drive PDFs, Docs, Slides, and Sheets</p>
               </div>
             </div>
-            <span className="px-3 py-1 rounded-full bg-indigo-50 text-indigo-700 border border-indigo-200 text-xs font-semibold">
-              Docs • Drive PDF • Slides • Sheets
+            <span className="text-xs text-indigo-700 font-medium hidden sm:inline shrink-0">
+              Docs · Drive PDF · Slides · Sheets
             </span>
           </div>
 
@@ -800,7 +802,7 @@ export const TeacherPortal: React.FC<Props> = ({
                 type="button"
                 disabled={gdriveImporting}
                 onClick={() => setGdriveIsPublished(!gdriveIsPublished)}
-                className={`flex items-center gap-2 px-3 py-2 rounded-xl border text-xs font-semibold transition-all cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed ${
+                className={`min-h-[44px] flex items-center gap-2 px-3 py-2 rounded-xl border text-xs font-semibold transition-all cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed ${
                   gdriveIsPublished
                     ? "bg-emerald-50 border-emerald-300 text-emerald-800"
                     : "bg-slate-100 border-slate-300 text-slate-700"
@@ -809,12 +811,12 @@ export const TeacherPortal: React.FC<Props> = ({
                 {gdriveIsPublished ? (
                   <>
                     <Unlock className="w-3.5 h-3.5 text-emerald-600" />
-                    <span>🟢 Published (Visible to Students)</span>
+                    <span>Published (Visible to Students)</span>
                   </>
                 ) : (
                   <>
                     <Lock className="w-3.5 h-3.5 text-amber-600" />
-                    <span>🟡 Save as Draft (Hidden)</span>
+                    <span>Save as Draft (Hidden)</span>
                   </>
                 )}
               </button>
@@ -822,9 +824,9 @@ export const TeacherPortal: React.FC<Props> = ({
 
             {/* 9. Key Takeaways / Note Summary (full width) */}
             <div className="sm:col-span-2 space-y-1">
-              <label className="block text-xs font-medium text-slate-600 mb-1 flex items-center justify-between">
+              <label className="block text-xs font-medium text-slate-600 mb-1 flex items-center justify-between gap-2">
                 <span>Optional Key Takeaways / Note Summary (Indexed for Student AI Tutor & Quizzes)</span>
-                <span className="text-[10px] text-slate-500">Public or Private Docs</span>
+                <span className="text-[10px] text-slate-500 shrink-0 hidden sm:inline">Public or Private Docs</span>
               </label>
               <textarea
                 rows={2}
@@ -832,13 +834,13 @@ export const TeacherPortal: React.FC<Props> = ({
                 value={gdriveSummary}
                 onChange={(e) => setGdriveSummary(e.target.value)}
                 placeholder="e.g. Topics covered: IAM Policies, VPC Peering, S3 Bucket Encryption, and Auto-Scaling groups."
-                className="w-full bg-white border border-slate-300 rounded-xl px-3.5 py-2 text-xs text-slate-900 placeholder-slate-400 focus:outline-none focus:border-indigo-500 resize-none shadow-xs disabled:opacity-60 disabled:cursor-not-allowed"
+                className="w-full bg-white border border-slate-300 rounded-xl px-3.5 py-2.5 text-xs text-slate-900 placeholder-slate-400 focus:outline-none focus:border-indigo-500 resize-none shadow-xs disabled:opacity-60 disabled:cursor-not-allowed"
               />
             </div>
           </div>
 
-          <div className="flex items-center justify-between pt-2 border-t border-slate-100 flex-wrap gap-3">
-            <div className="text-[11px] text-slate-500">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between pt-3 border-t border-slate-100 gap-3">
+            <div className="text-xs text-slate-500">
               Destination: <strong className="text-slate-900 font-semibold">{effectiveGdriveSubject}</strong> &gt; <strong className="text-amber-700 font-semibold">{effectiveGdriveUnit}</strong>
             </div>
 
@@ -846,7 +848,7 @@ export const TeacherPortal: React.FC<Props> = ({
               type="button"
               onClick={handleGdriveImport}
               disabled={gdriveImporting || !gdriveLink.trim()}
-              className="px-5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs flex items-center gap-2 transition-all shadow-xs cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full sm:w-auto min-h-[46px] px-5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs flex items-center justify-center gap-2 transition-all shadow-xs cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
             >
               {gdriveImporting ? (
                 <>
@@ -864,7 +866,7 @@ export const TeacherPortal: React.FC<Props> = ({
         </div>
 
         {/* Teacher Class Announcements & Notice Board */}
-        <div className="bg-white border border-slate-200 rounded-3xl p-6 shadow-xs space-y-4">
+        <div className="bg-white border border-slate-200 rounded-2xl sm:rounded-3xl p-4 sm:p-6 shadow-xs space-y-4">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 pb-3">
             <div>
               <h2 className="text-base font-bold text-slate-900 flex items-center gap-2">
@@ -1006,72 +1008,74 @@ export const TeacherPortal: React.FC<Props> = ({
             </div>
 
             {/* View Mode Switcher + Merge + Search */}
-            <div className="flex items-center gap-2 flex-wrap">
-              {/* Layout Switcher */}
-              <div className="bg-slate-100 border border-slate-200 rounded-xl p-1 flex items-center gap-1 shadow-2xs">
-                <button
-                  onClick={() => setViewLayout("curriculum")}
-                  className={`px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer ${
-                    viewLayout === "curriculum"
-                      ? "bg-purple-600 text-white shadow-xs"
-                      : "text-slate-600 hover:text-slate-900"
-                  }`}
-                  title="Curriculum Unit View (Grouped by Subject & Unit)"
-                >
-                  <Folder className="w-3.5 h-3.5" />
-                  <span>Curriculum View</span>
-                </button>
-                <button
-                  onClick={() => setViewLayout("grid")}
-                  className={`px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer ${
-                    viewLayout === "grid"
-                      ? "bg-amber-500 text-slate-950 shadow-xs"
-                      : "text-slate-600 hover:text-slate-900"
-                  }`}
-                  title="All Notes Flat Grid View"
-                >
-                  <LayoutGrid className="w-3.5 h-3.5" />
-                  <span>Grid View</span>
-                </button>
-              </div>
-
-              {/* Merge Toggle Button */}
-              <button
-                onClick={() => {
-                  setIsMergeMode(!isMergeMode);
-                  setSelectedForMerge([]);
-                }}
-                className={`px-3 py-2 rounded-xl text-xs font-semibold border flex items-center gap-1.5 transition-all cursor-pointer shadow-2xs ${
-                  isMergeMode
-                    ? "bg-amber-500 text-slate-950 border-amber-400 font-bold"
-                    : "bg-white hover:bg-slate-50 text-slate-700 border-slate-200"
-                }`}
-              >
-                <GitMerge className="w-3.5 h-3.5" />
-                <span>{isMergeMode ? "Cancel Merge" : "Merge Notes"}</span>
-              </button>
-
-              {documents.length > 0 && (
-                <button
-                  onClick={() => setShowResetConfirm(true)}
-                  className="px-3 py-2 rounded-xl text-xs font-semibold border flex items-center gap-1.5 transition-all cursor-pointer bg-rose-50 hover:bg-rose-100 text-rose-700 border-rose-200 shadow-2xs"
-                  title="Clear all uploaded documents from the portal"
-                >
-                  <Trash2 className="w-3.5 h-3.5 text-rose-500" />
-                  <span>Clear All Files ({documents.length})</span>
-                </button>
-              )}
-
-              {/* Search Bar */}
-              <div className="relative w-full sm:w-60">
-                <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+            <div className="flex flex-col sm:flex-row sm:items-center gap-2.5 w-full md:w-auto">
+              {/* Search Bar (First on mobile for quick access) */}
+              <div className="relative w-full sm:w-56 order-first sm:order-last">
+                <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
                 <input
                   type="text"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   placeholder="Search subject, unit, topic..."
-                  className="w-full bg-white border border-slate-300 rounded-xl pl-9 pr-3 py-2 text-xs text-slate-900 placeholder-slate-400 focus:outline-none focus:border-amber-500 shadow-2xs"
+                  className="w-full min-h-[44px] sm:min-h-[38px] bg-white border border-slate-300 rounded-xl pl-9 pr-3 py-2 text-xs text-slate-900 placeholder-slate-400 focus:outline-none focus:border-amber-500 shadow-2xs"
                 />
+              </div>
+
+              <div className="flex items-center gap-2 flex-wrap">
+                {/* Layout Switcher */}
+                <div className="bg-slate-100 border border-slate-200 rounded-xl p-1 flex items-center gap-1 shadow-2xs flex-1 sm:flex-initial">
+                  <button
+                    onClick={() => setViewLayout("curriculum")}
+                    className={`flex-1 sm:flex-initial justify-center min-h-[36px] px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer whitespace-nowrap ${
+                      viewLayout === "curriculum"
+                        ? "bg-purple-600 text-white shadow-xs"
+                        : "text-slate-600 hover:text-slate-900"
+                    }`}
+                    title="Curriculum Unit View (Grouped by Subject & Unit)"
+                  >
+                    <Folder className="w-3.5 h-3.5" />
+                    <span>Curriculum</span>
+                  </button>
+                  <button
+                    onClick={() => setViewLayout("grid")}
+                    className={`flex-1 sm:flex-initial justify-center min-h-[36px] px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer whitespace-nowrap ${
+                      viewLayout === "grid"
+                        ? "bg-amber-500 text-slate-950 shadow-xs"
+                        : "text-slate-600 hover:text-slate-900"
+                    }`}
+                    title="All Notes Flat Grid View"
+                  >
+                    <LayoutGrid className="w-3.5 h-3.5" />
+                    <span>Grid</span>
+                  </button>
+                </div>
+
+                {/* Merge Toggle Button */}
+                <button
+                  onClick={() => {
+                    setIsMergeMode(!isMergeMode);
+                    setSelectedForMerge([]);
+                  }}
+                  className={`min-h-[40px] sm:min-h-[38px] px-3 py-2 rounded-xl text-xs font-semibold border flex items-center gap-1.5 transition-all cursor-pointer shadow-2xs whitespace-nowrap ${
+                    isMergeMode
+                      ? "bg-amber-500 text-slate-950 border-amber-400 font-bold"
+                      : "bg-white hover:bg-slate-50 text-slate-700 border-slate-200"
+                  }`}
+                >
+                  <GitMerge className="w-3.5 h-3.5" />
+                  <span>{isMergeMode ? "Cancel Merge" : "Merge"}</span>
+                </button>
+
+                {documents.length > 0 && (
+                  <button
+                    onClick={() => setShowResetConfirm(true)}
+                    className="min-h-[40px] sm:min-h-[38px] px-3 py-2 rounded-xl text-xs font-semibold border flex items-center gap-1.5 transition-all cursor-pointer bg-rose-50 hover:bg-rose-100 text-rose-700 border-rose-200 shadow-2xs whitespace-nowrap"
+                    title="Clear all uploaded documents from the portal"
+                  >
+                    <Trash2 className="w-3.5 h-3.5 text-rose-500" />
+                    <span>Clear ({documents.length})</span>
+                  </button>
+                )}
               </div>
             </div>
           </div>
@@ -1088,18 +1092,18 @@ export const TeacherPortal: React.FC<Props> = ({
                 </div>
               </div>
 
-              <div className="flex items-center gap-2">
+              <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 w-full sm:w-auto">
                 <input
                   type="text"
                   value={mergedGuideTitle}
                   onChange={(e) => setMergedGuideTitle(e.target.value)}
                   placeholder="Merged Guide Title"
-                  className="bg-white border border-amber-300 rounded-xl px-3 py-1.5 text-xs text-slate-900 focus:outline-none focus:border-amber-500 w-60 shadow-2xs"
+                  className="bg-white border border-amber-300 rounded-xl px-3 py-2 text-xs text-slate-900 focus:outline-none focus:border-amber-500 w-full sm:w-60 min-h-[40px] shadow-2xs"
                 />
                 <button
                   onClick={handleExecuteMerge}
                   disabled={selectedForMerge.length < 2}
-                  className={`px-4 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                  className={`min-h-[40px] px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer whitespace-nowrap ${
                     selectedForMerge.length < 2
                       ? "bg-slate-200 text-slate-400 cursor-not-allowed"
                       : "bg-amber-500 hover:bg-amber-400 text-slate-950 shadow-xs"
@@ -1204,29 +1208,27 @@ export const TeacherPortal: React.FC<Props> = ({
                       {/* Subject Section Header Banner */}
                       <div 
                         onClick={() => toggleSubjectCollapse(subjectName)}
-                        className="p-4 sm:p-5 bg-slate-50/80 border-b border-slate-200 flex items-center justify-between cursor-pointer hover:bg-slate-100/70 transition-colors select-none"
+                        className="p-3.5 sm:p-5 bg-slate-50/80 border-b border-slate-200 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 cursor-pointer hover:bg-slate-100/70 transition-colors select-none"
                       >
-                        <div className="flex items-center gap-3">
-                          <button className="p-1 rounded-lg bg-white border border-slate-200 text-slate-600 shadow-2xs">
+                        <div className="flex items-center gap-2.5 min-w-0">
+                          <button className="p-1.5 rounded-lg bg-white border border-slate-200 text-slate-600 shadow-2xs shrink-0">
                             {isCollapsed ? <ChevronRight className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
                           </button>
-                          <div>
-                            <div className="flex items-center gap-2">
-                              <span className="px-2.5 py-0.5 rounded-lg bg-purple-100 text-purple-700 border border-purple-200 text-xs font-bold">
-                                {subjectName}
-                              </span>
-                              <span className="text-xs text-slate-500 font-mono">
-                                ({subjectDocCount} {subjectDocCount === 1 ? "Note" : "Notes"} across {Object.keys(unitsMap).length} {Object.keys(unitsMap).length === 1 ? "Unit" : "Units"})
-                              </span>
-                            </div>
+                          <div className="flex items-center gap-2 flex-wrap min-w-0">
+                            <span className="px-2.5 py-0.5 rounded-lg bg-purple-100 text-purple-700 border border-purple-200 text-xs font-bold truncate max-w-full">
+                              {subjectName}
+                            </span>
+                            <span className="text-xs text-slate-500 font-mono tabular-nums">
+                              {subjectDocCount} {subjectDocCount === 1 ? "Note" : "Notes"} · {Object.keys(unitsMap).length} {Object.keys(unitsMap).length === 1 ? "Unit" : "Units"}
+                            </span>
                           </div>
                         </div>
 
                         {/* Subject Quick Add Shortcut */}
-                        <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
+                        <div className="flex items-center gap-2 self-start sm:self-auto shrink-0" onClick={(e) => e.stopPropagation()}>
                           <button
                             onClick={() => handlePresetUploadForSubjectAndUnit(subjectName, "Unit 1")}
-                            className="px-3 py-1.5 bg-purple-50 hover:bg-purple-100 text-purple-700 border border-purple-200 rounded-xl text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer shadow-2xs"
+                            className="min-h-[36px] px-3 py-1.5 bg-purple-50 hover:bg-purple-100 text-purple-700 border border-purple-200 rounded-xl text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer shadow-2xs whitespace-nowrap"
                             title={`Upload note directly to ${subjectName}`}
                           >
                             <Plus className="w-3.5 h-3.5" />
@@ -1382,38 +1384,38 @@ export const TeacherPortal: React.FC<Props> = ({
                                       </div>
 
                                       {/* Bottom Teacher Action Bar */}
-                                      <div className="pt-2.5 border-t border-slate-100 flex items-center justify-between gap-2 text-xs flex-wrap">
-                                        <div className="flex items-center gap-1">
+                                      <div className="pt-3 border-t border-slate-100 flex items-center justify-between gap-2 text-xs flex-wrap">
+                                        <div className="flex items-center gap-1.5">
                                           <button
                                             onClick={() => handleOpenEdit(doc)}
-                                            className="p-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-600 hover:text-slate-900 transition-colors cursor-pointer"
+                                            className="min-w-[38px] min-h-[38px] sm:min-w-[32px] sm:min-h-[32px] p-2 sm:p-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-600 hover:text-slate-900 transition-colors cursor-pointer flex items-center justify-center"
                                             title="Edit Subject, Unit & Title"
                                           >
                                             <Edit3 className="w-3.5 h-3.5" />
                                           </button>
                                           <button
                                             onClick={() => onDuplicateDocument(doc.id)}
-                                            className="p-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-600 hover:text-slate-900 transition-colors cursor-pointer"
+                                            className="min-w-[38px] min-h-[38px] sm:min-w-[32px] sm:min-h-[32px] p-2 sm:p-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-600 hover:text-slate-900 transition-colors cursor-pointer flex items-center justify-center"
                                             title="Duplicate Note"
                                           >
                                             <Copy className="w-3.5 h-3.5" />
                                           </button>
                                           <button
                                             onClick={() => setShowDeleteConfirmId(doc.id)}
-                                            className="p-1.5 rounded-lg bg-slate-100 hover:bg-rose-50 text-slate-500 hover:text-rose-600 transition-colors cursor-pointer"
+                                            className="min-w-[38px] min-h-[38px] sm:min-w-[32px] sm:min-h-[32px] p-2 sm:p-1.5 rounded-lg bg-slate-100 hover:bg-rose-50 text-slate-500 hover:text-rose-600 transition-colors cursor-pointer flex items-center justify-center"
                                             title="Permanently Delete Note and Remove from ChromaDB"
                                           >
                                             <Trash2 className="w-3.5 h-3.5" />
                                           </button>
                                         </div>
 
-                                        <div className="flex items-center gap-1.5">
+                                        <div className="flex items-center gap-1.5 flex-wrap">
                                           {(doc.fileFormat === "pptx" || doc.fileFormat === "ppt") && (
                                             <a
                                               href={doc.downloadUrl || doc.originalFileUrl || `/api/download/${doc.id}`}
                                               download={doc.originalFileName || `${doc.title}.pptx`}
                                               onClick={(e) => e.stopPropagation()}
-                                              className="px-2 py-1 rounded-lg bg-orange-50 hover:bg-orange-100 text-orange-700 border border-orange-200 text-xs font-semibold flex items-center gap-1 cursor-pointer transition-colors"
+                                              className="min-h-[38px] sm:min-h-[32px] px-2.5 py-1.5 rounded-lg bg-orange-50 hover:bg-orange-100 text-orange-700 border border-orange-200 text-xs font-semibold flex items-center gap-1 cursor-pointer transition-colors"
                                               title="Download original PowerPoint presentation (.pptx)"
                                             >
                                               <Download className="w-3 h-3" />
@@ -1422,14 +1424,14 @@ export const TeacherPortal: React.FC<Props> = ({
                                           )}
                                           <button
                                             onClick={() => onSelectDocument(doc.id, true)}
-                                            className="px-2.5 py-1 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 hover:text-amber-600 text-xs font-semibold flex items-center gap-1 cursor-pointer"
+                                            className="min-h-[38px] sm:min-h-[32px] px-2.5 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 hover:text-amber-600 text-xs font-semibold flex items-center gap-1 cursor-pointer whitespace-nowrap"
                                           >
                                             <Sparkles className="w-3 h-3 text-amber-500" />
                                             <span>AI Tutor</span>
                                           </button>
                                           <button
                                             onClick={() => onSelectDocument(doc.id, false)}
-                                            className="px-3 py-1 rounded-lg bg-amber-500 hover:bg-amber-400 text-slate-950 text-xs font-bold flex items-center gap-1 transition-all shadow-2xs cursor-pointer"
+                                            className="min-h-[38px] sm:min-h-[32px] px-3 py-1.5 rounded-lg bg-amber-500 hover:bg-amber-400 text-slate-950 text-xs font-bold flex items-center gap-1 transition-all shadow-2xs cursor-pointer whitespace-nowrap"
                                           >
                                             <span>{doc.fileFormat === "pptx" || doc.fileFormat === "ppt" ? "View Slides" : "Open Reader"}</span>
                                             <ArrowRight className="w-3 h-3" />

@@ -2,10 +2,10 @@ import { CloudClient, EmbeddingFunction } from "chromadb";
 import { NoteDocument, CourseAnnouncement } from "./src/types";
 
 // ChromaDB Cloud configuration with fallback to provided credentials
-const CHROMA_API_KEY = process.env.CHROMA_API_KEY || "ck-GcQZtcjL4HkCUrRnhdhvLC632JVA9YXHYw7PVoDWj8AM";
-const CHROMA_TENANT = process.env.CHROMA_TENANT || "0f94ea0f-37ba-4909-88f1-4ee0f0e15dd7";
-const CHROMA_DATABASE = process.env.CHROMA_DATABASE || "rag-notes-application1";
-const COLLECTION_NAME = "course_notes_rag";
+const CHROMA_API_KEY = (process.env.CHROMA_API_KEY || "ck-GcQZtcjL4HkCUrRnhdhvLC632JVA9YXHYw7PVoDWj8AM").trim();
+const CHROMA_TENANT = (process.env.CHROMA_TENANT || "0f94ea0f-37ba-4909-88f1-4ee0f0e15dd7").trim();
+const CHROMA_DATABASE = (process.env.CHROMA_DATABASE || "rag-notes-application1").trim();
+const COLLECTION_NAME = (process.env.CHROMA_COLLECTION || "student_notes").trim() || "student_notes";
 
 /**
  * Robust, zero-dependency 384-dimensional dense semantic vector generator.
@@ -141,7 +141,7 @@ export async function initChroma(): Promise<boolean> {
         name: COLLECTION_NAME,
         embeddingFunction: embeddingFunction,
         metadata: {
-          description: "Vector database for AWS Cloud Notes & Study Portal RAG",
+          description: "Vector database for Student Notes Hub RAG & course materials",
           createdAt: new Date().toISOString()
         }
       });
@@ -289,13 +289,36 @@ export async function indexDocumentToChroma(doc: NoteDocument): Promise<number> 
     const documents: string[] = [];
     const metadatas: Record<string, any>[] = [];
 
+    const tagsCsv = Array.isArray(doc.tags) ? doc.tags.join("|").slice(0, 300) : "";
+    const sharedDocMeta = {
+      type: "note",
+      docId: String(doc.id),
+      docTitle: String(doc.title || "").slice(0, 250),
+      shortTitle: String(doc.shortTitle || "").slice(0, 120),
+      description: String(doc.description || "").slice(0, 400),
+      subject: String(doc.subject || "Course Material").slice(0, 120),
+      unit: String(doc.unit || "Unit 1").slice(0, 80),
+      unitNumber: Number(doc.unitNumber || 1),
+      unitTitle: String(doc.unitTitle || "").slice(0, 150),
+      courseCode: String(doc.courseCode || "").slice(0, 60),
+      uploadedBy: String(doc.uploadedBy || "Instructor").slice(0, 120),
+      uploadedAt: String(doc.uploadedAt || "").slice(0, 80),
+      isPublished: doc.isPublished !== false,
+      fileFormat: String(doc.fileFormat || "markdown").slice(0, 40),
+      originalFileUrl: String(doc.originalFileUrl || "").slice(0, 500),
+      downloadUrl: String(doc.downloadUrl || "").slice(0, 500),
+      embedUrl: String(doc.embedUrl || "").slice(0, 500),
+      tagsCsv,
+      pageCount: Number(doc.pageCount || doc.sections?.length || 1)
+    };
+
     const sections = doc.sections || [];
     sections.forEach((sec, idx) => {
       const pageNum = sec.pageNumber || idx + 1;
       const content = sec.contentMarkdown || "";
       if (!content.trim()) return;
 
-      const headerPrefix = `[Document: ${doc.title}] [Subject: ${doc.subject || "AWS Cloud"}] [Unit: ${doc.unit || "Unit 1"}] [Page ${pageNum}: ${sec.title}]\n${sec.subtitle ? sec.subtitle + "\n" : ""}`;
+      const headerPrefix = `[Document: ${doc.title}] [Subject: ${doc.subject || "Course Material"}] [Unit: ${doc.unit || "Unit 1"}] [Page ${pageNum}: ${sec.title}]\n${sec.subtitle ? sec.subtitle + "\n" : ""}`;
       const rawFullText = `${headerPrefix}${content}`;
 
       // Enforce safe chunk size strictly <= 3,800 bytes (ChromaDB quota ceiling is 16,384 bytes)
@@ -306,15 +329,11 @@ export async function indexDocumentToChroma(doc: NoteDocument): Promise<number> 
         ids.push(chunkId);
         documents.push(chunkText);
         metadatas.push({
-          type: "note",
-          docId: String(doc.id),
-          docTitle: String(doc.title || ""),
-          shortTitle: String(doc.shortTitle || ""),
-          subject: String(doc.subject || "AWS Cloud & Labs"),
-          unit: String(doc.unit || "Unit 1"),
+          ...sharedDocMeta,
           pageNumber: Number(pageNum),
-          sectionTitle: String(sec.title || `Page ${pageNum}`),
-          courseCode: String(doc.courseCode || ""),
+          sectionId: String(sec.id || `sec-${doc.id}-${pageNum}`).slice(0, 120),
+          sectionTitle: String(sec.title || `Page ${pageNum}`).slice(0, 200),
+          sectionSubtitle: String(sec.subtitle || "").slice(0, 200),
           chunkIndex: cIdx,
           totalChunks: safeChunks.length
         });
@@ -331,15 +350,11 @@ export async function indexDocumentToChroma(doc: NoteDocument): Promise<number> 
         ids.push(chunkId);
         documents.push(chunkText);
         metadatas.push({
-          type: "note",
-          docId: String(doc.id),
-          docTitle: String(doc.title || ""),
-          shortTitle: String(doc.shortTitle || ""),
-          subject: String(doc.subject || "Course Material"),
-          unit: String(doc.unit || "Unit 1"),
+          ...sharedDocMeta,
           pageNumber: 1,
-          sectionTitle: String(doc.title || "Overview"),
-          courseCode: String(doc.courseCode || ""),
+          sectionId: `sec-${doc.id}-1`,
+          sectionTitle: String(doc.title || "Overview").slice(0, 200),
+          sectionSubtitle: "",
           chunkIndex: cIdx,
           totalChunks: safeChunks.length
         });
@@ -625,8 +640,229 @@ export interface ChromaSearchResult {
     pageNumber: number;
     sectionTitle: string;
     courseCode?: string;
+    isPublished?: boolean;
   };
   distance: number | null;
+}
+
+function stripChromaHeaderPrefix(text: string, subtitle?: string): string {
+  if (!text) return "";
+  let cleaned = text.replace(
+    /^\[Document:[^\]]*\]\s*\[Subject:[^\]]*\]\s*\[Unit:[^\]]*\](?:\s*\[Page\s+\d+:[^\]]*\])?\r?\n/,
+    ""
+  );
+  if (subtitle && cleaned.startsWith(subtitle + "\n")) {
+    cleaned = cleaned.slice(subtitle.length + 1);
+  }
+  return cleaned;
+}
+
+async function fetchAllCollectionRecords(): Promise<{
+  ids: string[];
+  documents: (string | null)[];
+  metadatas: (Record<string, any> | null)[];
+}> {
+  const ready = await initChroma();
+  if (!ready || !activeCollection) {
+    return { ids: [], documents: [], metadatas: [] };
+  }
+
+  const allIds: string[] = [];
+  const allDocs: (string | null)[] = [];
+  const allMetas: (Record<string, any> | null)[] = [];
+
+  const PAGE_SIZE = 100;
+  let offset = 0;
+
+  while (true) {
+    const batch = await activeCollection.get({
+      limit: PAGE_SIZE,
+      offset,
+      include: ["documents", "metadatas"]
+    });
+
+    const ids: string[] = batch?.ids || [];
+    const docs: (string | null)[] = batch?.documents || [];
+    const metas: (Record<string, any> | null)[] = batch?.metadatas || [];
+
+    if (ids.length === 0) break;
+
+    allIds.push(...ids);
+    allDocs.push(...docs);
+    allMetas.push(...metas);
+
+    if (ids.length < PAGE_SIZE) break;
+    offset += PAGE_SIZE;
+  }
+
+  return { ids: allIds, documents: allDocs, metadatas: allMetas };
+}
+
+/**
+ * Reconstruct complete NoteDocument objects directly from ChromaDB Cloud (`student_notes`).
+ * Allows both Student & Teacher apps to restore notes seamlessly even after ephemeral disk resets.
+ */
+export async function loadDocumentsFromChroma(): Promise<NoteDocument[]> {
+  try {
+    const { ids, documents, metadatas } = await fetchAllCollectionRecords();
+    if (ids.length === 0) return [];
+
+    type ChunkEntry = { chunkIndex: number; text: string; meta: Record<string, any> };
+    const docsMap = new Map<
+      string,
+      {
+        meta: Record<string, any>;
+        sections: Map<string, { pageNumber: number; sectionId: string; title: string; subtitle: string; chunks: ChunkEntry[] }>;
+      }
+    >();
+
+    for (let i = 0; i < ids.length; i++) {
+      const meta = metadatas[i] || {};
+      const text = documents[i] || "";
+
+      if (meta.type === "announcement" || String(meta.docId || "").startsWith("ann_") || String(ids[i]).startsWith("ann_")) {
+        continue;
+      }
+
+      const docId = String(meta.docId || "").trim();
+      if (!docId) continue;
+
+      if (!docsMap.has(docId)) {
+        docsMap.set(docId, {
+          meta,
+          sections: new Map()
+        });
+      }
+
+      const docEntry = docsMap.get(docId)!;
+      const pageNum = Number(meta.pageNumber || 1);
+      const secKey = `${pageNum}::${meta.sectionId || meta.sectionTitle || pageNum}`;
+
+      if (!docEntry.sections.has(secKey)) {
+        docEntry.sections.set(secKey, {
+          pageNumber: pageNum,
+          sectionId: String(meta.sectionId || `sec-${docId}-${pageNum}`),
+          title: String(meta.sectionTitle || meta.docTitle || `Page ${pageNum}`),
+          subtitle: String(meta.sectionSubtitle || ""),
+          chunks: []
+        });
+      }
+
+      docEntry.sections.get(secKey)!.chunks.push({
+        chunkIndex: Number(meta.chunkIndex ?? 0),
+        text,
+        meta
+      });
+    }
+
+    const reconstructed: NoteDocument[] = [];
+    for (const [docId, entry] of docsMap.entries()) {
+      const m = entry.meta;
+      const sections = Array.from(entry.sections.values())
+        .sort((a, b) => a.pageNumber - b.pageNumber)
+        .map((sec) => {
+          const orderedChunks = sec.chunks
+            .sort((a, b) => a.chunkIndex - b.chunkIndex)
+            .map((c, idx) => (idx === 0 ? stripChromaHeaderPrefix(c.text, sec.subtitle) : c.text));
+          return {
+            id: sec.sectionId,
+            title: sec.title,
+            subtitle: sec.subtitle,
+            contentMarkdown: orderedChunks.join("\n\n").trim(),
+            pageNumber: sec.pageNumber
+          };
+        });
+
+      const title = String(m.docTitle || docId);
+      const tags = typeof m.tagsCsv === "string" && m.tagsCsv.trim()
+        ? m.tagsCsv.split("|").filter(Boolean)
+        : [String(m.subject || "Course Material")];
+
+      const docObj: NoteDocument = {
+        id: docId,
+        title,
+        shortTitle: String(m.shortTitle || (title.length > 24 ? title.slice(0, 22) + "..." : title)),
+        description: String(m.description || `Stored in ChromaDB: ${title}`),
+        pageCount: Number(m.pageCount || sections.length || 1),
+        sections,
+        subject: String(m.subject || "Course Material"),
+        unit: String(m.unit || "Unit 1"),
+        unitNumber: Number(m.unitNumber || 1),
+        unitTitle: String(m.unitTitle || ""),
+        courseCode: String(m.courseCode || ""),
+        uploadedBy: String(m.uploadedBy || "Instructor"),
+        uploadedAt: String(m.uploadedAt || ""),
+        isPublished: m.isPublished !== false,
+        fileFormat: (m.fileFormat as any) || (docId.startsWith("glink-") ? "google-drive" : "markdown"),
+        originalFileUrl: m.originalFileUrl ? String(m.originalFileUrl) : undefined,
+        downloadUrl: m.downloadUrl ? String(m.downloadUrl) : undefined,
+        embedUrl: m.embedUrl ? String(m.embedUrl) : undefined,
+        tags
+      };
+
+      reconstructed.push(docObj);
+    }
+
+    console.log(`[ChromaDB] Loaded ${reconstructed.length} course note document(s) from collection "${COLLECTION_NAME}"`);
+    return reconstructed;
+  } catch (err: any) {
+    console.warn("[ChromaDB] Failed loading documents from ChromaDB:", err?.message || err);
+    return [];
+  }
+}
+
+/**
+ * Reconstruct CourseAnnouncement items from ChromaDB Cloud (`student_notes`).
+ */
+export async function loadAnnouncementsFromChroma(): Promise<CourseAnnouncement[]> {
+  try {
+    const { ids, documents, metadatas } = await fetchAllCollectionRecords();
+    if (ids.length === 0) return [];
+
+    const annMap = new Map<string, { meta: Record<string, any>; chunks: { idx: number; text: string }[] }>();
+
+    for (let i = 0; i < ids.length; i++) {
+      const meta = metadatas[i] || {};
+      if (meta.type !== "announcement" && !String(ids[i]).startsWith("ann_")) continue;
+
+      const annId = String(meta.annId || String(meta.docId || "").replace(/^ann_/, "") || "").trim();
+      if (!annId) continue;
+
+      if (!annMap.has(annId)) {
+        annMap.set(annId, { meta, chunks: [] });
+      }
+      annMap.get(annId)!.chunks.push({
+        idx: Number(meta.chunkIndex ?? 0),
+        text: documents[i] || ""
+      });
+    }
+
+    const result: CourseAnnouncement[] = [];
+    for (const [annId, entry] of annMap.entries()) {
+      const m = entry.meta;
+      const joined = entry.chunks
+        .sort((a, b) => a.idx - b.idx)
+        .map((c, idx) => (idx === 0 ? c.text.replace(/^\[Course Announcement[^\n]*\r?\n\r?\n/, "") : c.text))
+        .join("\n\n")
+        .trim();
+
+      result.push({
+        id: annId,
+        title: String(m.title || "Course Announcement"),
+        content: joined,
+        date: String(m.date || ""),
+        author: String(m.author || "Instructor"),
+        important: Boolean(m.important),
+        relatedDocId: m.relatedDocId ? String(m.relatedDocId) : undefined,
+        relatedDocTitle: m.relatedDocTitle ? String(m.relatedDocTitle) : undefined
+      });
+    }
+
+    return result;
+  } catch (err: any) {
+    console.warn("[ChromaDB] Failed loading announcements from ChromaDB:", err?.message || err);
+    return [];
+  }
 }
 
 export async function queryChroma(
@@ -636,6 +872,7 @@ export async function queryChroma(
     docId?: string;
     subject?: string;
     unit?: string;
+    publishedOnly?: boolean;
   } = {}
 ): Promise<ChromaSearchResult[]> {
   const ready = await initChroma();
@@ -645,7 +882,7 @@ export async function queryChroma(
     const nResults = options.nResults || 6;
     const queryParams: any = {
       queryTexts: [queryText],
-      nResults: nResults
+      nResults: options.publishedOnly ? Math.min(20, nResults * 2) : nResults
     };
 
     const whereConditions: any = {};
@@ -676,14 +913,19 @@ export async function queryChroma(
     const distances = queryResponse.distances?.[0] || [];
 
     for (let i = 0; i < ids.length; i++) {
+      const meta = (metadatas[i] as any) || {};
+      if (options.publishedOnly && meta.isPublished === false) {
+        continue;
+      }
       if (docs[i]) {
         results.push({
           id: ids[i],
           document: docs[i],
-          metadata: (metadatas[i] as any) || {},
+          metadata: meta,
           distance: distances[i] !== undefined ? distances[i] : null
         });
       }
+      if (results.length >= nResults) break;
     }
 
     return results;

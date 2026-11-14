@@ -247,25 +247,21 @@ export const StudentApp: React.FC<Props> = ({ isStandalone = true, onSwitchPorta
   const currentDocument = documents.find(d => d.id === activeView);
 
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-900 flex flex-col antialiased selection:bg-amber-100 selection:text-amber-900">
+    <div className="min-h-[100dvh] bg-slate-50 text-slate-900 flex flex-col antialiased selection:bg-amber-100 selection:text-amber-900">
       
       {/* Top Student Navigation Bar */}
-      <nav className="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-slate-200 px-3 sm:px-5 py-2.5 flex items-center justify-between gap-3 text-xs flex-wrap shadow-xs">
+      <nav className="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-slate-200 px-3 sm:px-5 py-2 pt-safe min-h-[52px] flex items-center justify-between gap-3 text-xs shadow-xs">
         
         {/* Left: Brand Identity */}
-        <div className="flex items-center gap-2.5">
-          <div className="p-1.5 bg-amber-500 text-slate-950 font-bold rounded-xl shadow-xs">
+        <div className="flex items-center gap-2.5 min-w-0">
+          <div className="p-1.5 bg-amber-500 text-slate-950 font-bold rounded-xl shadow-xs shrink-0">
             <GraduationCap className="w-4 h-4" />
           </div>
-          <div>
-            <span className="font-extrabold text-sm text-slate-900 tracking-tight">Student Notes Hub</span>
-          </div>
+          <span className="font-extrabold text-sm text-slate-900 tracking-tight truncate">Student Notes Hub</span>
         </div>
 
         {/* Right: Actions */}
-        <div className="flex items-center gap-2 flex-wrap">
-
-
+        <div className="flex items-center gap-2 shrink-0">
           {activeView !== "dashboard" && (
             <button
               onClick={() => {
@@ -274,10 +270,11 @@ export const StudentApp: React.FC<Props> = ({ isStandalone = true, onSwitchPorta
                 url.searchParams.delete("doc");
                 window.history.pushState({}, "", url.toString());
               }}
-              className="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-300 rounded-lg text-xs font-semibold flex items-center gap-1.5 cursor-pointer transition-colors"
+              className="px-3 min-h-[38px] bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-300 rounded-xl text-xs font-semibold flex items-center gap-1.5 cursor-pointer transition-colors whitespace-nowrap shrink-0"
             >
               <ArrowLeft className="w-3.5 h-3.5" />
-              <span>Back to Course Notes</span>
+              <span className="sm:hidden">Back</span>
+              <span className="hidden sm:inline">Back to Course Notes</span>
             </button>
           )}
         </div>
@@ -380,7 +377,7 @@ export const StudentApp: React.FC<Props> = ({ isStandalone = true, onSwitchPorta
 
       {/* Practice Quiz Modal */}
       {quizModalOpen && (
-        <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto">
+        <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-end sm:items-center justify-center p-2 sm:p-4 overflow-y-auto pb-safe">
           <div className="w-full max-w-3xl my-auto">
             <FlashcardsQuiz
               selectedNote={documents.find(d => d.id === quizTargetDocId) || currentDocument || null}

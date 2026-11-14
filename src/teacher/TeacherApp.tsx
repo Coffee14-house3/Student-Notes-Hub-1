@@ -498,35 +498,29 @@ export const TeacherApp: React.FC<Props> = ({ isStandalone = true, onSwitchPorta
   const currentDocument = documents.find(d => d.id === activeView);
 
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-900 flex flex-col antialiased selection:bg-purple-100 selection:text-purple-900">
+    <div className="min-h-[100dvh] bg-slate-50 text-slate-900 flex flex-col antialiased selection:bg-purple-100 selection:text-purple-900">
       
       {/* Top Teacher Studio Navigation Bar */}
-      <nav className="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-slate-200 px-3 sm:px-5 py-2.5 flex items-center justify-between gap-3 text-xs flex-wrap shadow-xs">
+      <nav className="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-slate-200 px-3 sm:px-5 py-2 pt-safe min-h-[52px] flex items-center justify-between gap-3 text-xs shadow-xs">
         
         {/* Left: Brand Identity */}
-        <div className="flex items-center gap-2.5">
-          <div className="p-1.5 bg-gradient-to-r from-purple-600 to-indigo-600 text-white font-bold rounded-xl shadow-xs">
+        <div className="flex items-center gap-2.5 min-w-0">
+          <div className="p-1.5 bg-gradient-to-r from-purple-600 to-indigo-600 text-white font-bold rounded-xl shadow-xs shrink-0">
             <Layers className="w-4 h-4" />
           </div>
-          <div>
-            <div className="flex items-center gap-2">
-              <span className="font-extrabold text-sm text-slate-900 tracking-tight">Faculty & Instructor Studio</span>
-              <span className="px-2 py-0.5 rounded-full bg-purple-50 text-purple-800 border border-purple-200 text-[10px] font-bold">
-                MCA-204
-              </span>
-            </div>
-          </div>
+          <span className="font-extrabold text-sm text-slate-900 tracking-tight truncate">Faculty & Instructor Studio</span>
         </div>
 
         {/* Right: Actions */}
-        <div className="flex items-center gap-2 flex-wrap">
+        <div className="flex items-center gap-2 shrink-0">
           {activeView !== "dashboard" && (
             <button
               onClick={() => setActiveView("dashboard")}
-              className="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-300 rounded-lg text-xs font-semibold flex items-center gap-1.5 cursor-pointer transition-colors"
+              className="px-3 min-h-[38px] bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-300 rounded-xl text-xs font-semibold flex items-center gap-1.5 cursor-pointer transition-colors whitespace-nowrap shrink-0"
             >
               <ArrowLeft className="w-3.5 h-3.5" />
-              <span>Back to Studio Dashboard</span>
+              <span className="sm:hidden">Back</span>
+              <span className="hidden sm:inline">Back to Studio Dashboard</span>
             </button>
           )}
         </div>
