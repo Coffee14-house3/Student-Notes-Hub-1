@@ -615,6 +615,31 @@ const INITIAL_MESSAGE = {
   text: "Hello! I am your AI Smart Tutor. Ask me any question about the lecture notes—such as architecture explanations, cost calculations, or service comparisons!"
 };
 
+function sanitizeDocumentForChat(doc?: NoteDocument) {
+  if (!doc) return undefined;
+  return {
+    id: doc.id,
+    title: doc.title,
+    shortTitle: doc.shortTitle,
+    subject: doc.subject,
+    unit: doc.unit,
+    unitTitle: doc.unitTitle,
+    courseCode: doc.courseCode,
+    fileFormat: doc.fileFormat,
+    originalFileUrl: doc.originalFileUrl,
+    embedUrl: doc.embedUrl,
+    sections: Array.isArray(doc.sections)
+      ? doc.sections.slice(0, 40).map((s) => ({
+          id: s.id,
+          pageNumber: s.pageNumber,
+          title: s.title,
+          subtitle: s.subtitle,
+          contentMarkdown: (s.contentMarkdown || "").slice(0, 4000)
+        }))
+      : []
+  };
+}
+
 export const AiAssistantModal: React.FC<Props> = ({ 
   isOpen, 
   onClose, 
@@ -640,6 +665,8 @@ export const AiAssistantModal: React.FC<Props> = ({
   const [copiedMsgIdx, setCopiedMsgIdx] = useState<number | null>(null);
   const [isWide, setIsWide] = useState<boolean>(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const activeRequestAbortRef = useRef<AbortController | null>(null);
+  const cancelledByUserRef = useRef<boolean>(false);
 
   const handleCopyMessage = (text: string, idx: number) => {
     navigator.clipboard.writeText(text);
@@ -656,6 +683,13 @@ export const AiAssistantModal: React.FC<Props> = ({
     }
   }, [messages]);
 
+  // Abort in-flight request if unmounted
+  useEffect(() => {
+    return () => {
+      activeRequestAbortRef.current?.abort();
+    };
+  }, []);
+
   // Auto scroll to bottom of messages
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -665,15 +699,25 @@ export const AiAssistantModal: React.FC<Props> = ({
     if (isOpen) {
       scrollToBottom();
     }
-  }, [messages, isOpen]);
+  }, [messages, loading, isOpen]);
 
   const handleClearChat = () => {
+    activeRequestAbortRef.current?.abort();
+    setLoading(false);
     setMessages([INITIAL_MESSAGE]);
     try {
       localStorage.removeItem("aws_ai_tutor_messages");
     } catch {
       // ignore
     }
+  };
+
+  const handleCancelRequest = () => {
+    cancelledByUserRef.current = true;
+    activeRequestAbortRef.current?.abort();
+    activeRequestAbortRef.current = null;
+    setLoading(false);
+    setMessages(prev => [...prev, { role: "assistant", text: "Request cancelled. Feel free to edit your question and send again." }]);
   };
 
   const sendPrompt = async (promptText: string) => {
@@ -683,15 +727,26 @@ export const AiAssistantModal: React.FC<Props> = ({
 
     setMessages(prev => [...prev, { role: "user", text: userMsg }]);
     setLoading(true);
+    cancelledByUserRef.current = false;
+
+    const controller = new AbortController();
+    activeRequestAbortRef.current = controller;
+    const timeoutId = window.setTimeout(() => {
+      controller.abort();
+    }, 45000);
 
     try {
+      const lightweightDoc = sanitizeDocumentForChat(activeDocument);
+      const compactContext = (contextText || "").slice(0, 16000);
+
       const res = await apiFetch("/api/chat", {
         method: "POST",
+        signal: controller.signal,
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           prompt: userMsg,
-          context: contextText,
-          activeDocument
+          context: compactContext,
+          activeDocument: lightweightDoc
         })
       });
 
@@ -699,18 +754,32 @@ export const AiAssistantModal: React.FC<Props> = ({
       let data: any = {};
       try {
         data = JSON.parse(resText);
-      } catch (parseErr) {
+      } catch {
         data = { text: resText || "Received non-JSON response from server." };
       }
 
       if (res.ok && data.text) {
         setMessages(prev => [...prev, { role: "assistant", text: data.text }]);
       } else {
-        setMessages(prev => [...prev, { role: "assistant", text: `Error: ${data.error || resText.slice(0, 150) || "Failed to communicate with AI Assistant."}` }]);
+        setMessages(prev => [...prev, { role: "assistant", text: `⚠️ ${data.error || resText.slice(0, 200) || "Failed to generate answer."}` }]);
       }
     } catch (err: any) {
-      setMessages(prev => [...prev, { role: "assistant", text: "Failed to connect to AI Assistant server." }]);
+      if (err?.name === "AbortError") {
+        if (!cancelledByUserRef.current) {
+          setMessages(prev => [
+            ...prev,
+            {
+              role: "assistant",
+              text: "⏱️ Request timed out after 45 seconds (the Render server may be waking up from sleep or your mobile signal paused). Please tap **Send** to try again."
+            }
+          ]);
+        }
+      } else {
+        setMessages(prev => [...prev, { role: "assistant", text: `⚠️ Failed to connect to AI Assistant server (${err?.message || "network error"}). Please check your connection and try again.` }]);
+      }
     } finally {
+      window.clearTimeout(timeoutId);
+      activeRequestAbortRef.current = null;
       setLoading(false);
     }
   };
@@ -844,9 +913,18 @@ export const AiAssistantModal: React.FC<Props> = ({
             );
           })}
           {loading && (
-            <div className="flex items-center gap-2 text-slate-400 p-2.5 italic text-xs bg-slate-100 dark:bg-slate-800/50 rounded-xl w-fit border border-slate-200/50 dark:border-slate-700/50">
-              <Sparkles className="w-3.5 h-3.5 text-amber-400 animate-spin" />
-              <span>AI is analyzing notes...</span>
+            <div className="flex items-center justify-between gap-3 text-slate-500 dark:text-slate-400 p-2.5 text-xs bg-slate-100 dark:bg-slate-800/60 rounded-xl w-fit border border-slate-200/70 dark:border-slate-700/60">
+              <div className="flex items-center gap-2 italic">
+                <Sparkles className="w-3.5 h-3.5 text-amber-500 animate-spin shrink-0" />
+                <span>AI is analyzing notes...</span>
+              </div>
+              <button
+                type="button"
+                onClick={handleCancelRequest}
+                className="px-2 py-1 rounded-md bg-slate-200 dark:bg-slate-700 hover:bg-rose-100 dark:hover:bg-rose-900/40 text-slate-700 dark:text-slate-200 hover:text-rose-600 dark:hover:text-rose-300 text-[11px] font-semibold not-italic transition-colors cursor-pointer"
+              >
+                Stop
+              </button>
             </div>
           )}
           <div ref={messagesEndRef} />

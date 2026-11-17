@@ -196,6 +196,20 @@ async function retryWithBackoff<T>(
   }
 }
 
+async function withTimeout<T>(promise: Promise<T>, ms: number, label: string): Promise<T> {
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  try {
+    return await Promise.race([
+      promise,
+      new Promise<never>((_, reject) => {
+        timer = setTimeout(() => reject(new Error(`${label} timed out after ${Math.round(ms / 1000)}s`)), ms);
+      })
+    ]);
+  } finally {
+    if (timer) clearTimeout(timer);
+  }
+}
+
 async function callGeminiChat(
   systemInstruction: string,
   userPromptWithContext: string
@@ -206,21 +220,23 @@ async function callGeminiChat(
   const ai = getGeminiClient();
   if (!ai) return null;
 
-  // Multi-tier candidate list: start with active, ultra-fast flash models
-  const candidateModels = ["gemini-3.5-flash", "gemini-3.6-flash", "gemini-3.8-flash", "gemini-3.1-flash-lite"];
+  const candidateModels = ["gemini-4-hydrogen", "gemini-3.1-flash-lite"];
 
   for (const model of candidateModels) {
     try {
-      const response = await retryWithBackoff(async () => {
-        return await ai.models.generateContent({
-          model,
-          contents: userPromptWithContext,
-          config: {
-            systemInstruction,
-            temperature: 0.2,
-          },
-        });
-      }, 1, 400);
+      const response = await withTimeout(
+        retryWithBackoff(async () => {
+          return await ai.models.generateContent({
+            model,
+            contents: userPromptWithContext,
+            config: {
+              systemInstruction,
+            },
+          });
+        }, 1, 400),
+        22000,
+        `Gemini (${model})`
+      );
 
       if (response?.text) {
         lastAiDiagnosticError = null;
@@ -230,9 +246,12 @@ async function callGeminiChat(
       const errMsg = err?.message || String(err);
       console.warn(`[Gemini API] Chat error with ${model}:`, errMsg);
       if (errMsg.includes("API_KEY_INVALID") || errMsg.includes("API key not valid") || errMsg.includes("400") || errMsg.includes("403")) {
-        lastAiDiagnosticError = `Google Gemini rejected GEMINI_API_KEY: "API key not valid". Please verify key in Render environment.`;
+        lastAiDiagnosticError = `Google Gemini rejected GEMINI_API_KEY: "API key not valid". Please verify the key in Render environment variables.`;
+        break;
       } else if (errMsg.includes("RESOURCE_EXHAUSTED") || errMsg.includes("quota")) {
         lastAiDiagnosticError = `Google Gemini API quota reached: ${errMsg.slice(0, 160)}.`;
+      } else {
+        lastAiDiagnosticError = `Google Gemini request failed (${model}): ${errMsg.slice(0, 160)}`;
       }
     }
   }
@@ -246,27 +265,34 @@ async function callGeminiQuiz(
   const ai = getGeminiClient();
   if (!ai) return null;
 
-  const candidateModels = ["gemini-3.5-flash", "gemini-3.6-flash", "gemini-3.8-flash", "gemini-3.1-flash-lite"];
+  const candidateModels = ["gemini-4-hydrogen", "gemini-3.1-flash-lite"];
 
   for (const model of candidateModels) {
     try {
-      const response = await retryWithBackoff(async () => {
-        return await ai.models.generateContent({
-          model,
-          contents: userPrompt,
-          config: {
-            systemInstruction,
-            responseMimeType: "application/json",
-            temperature: 0.2,
-          },
-        });
-      });
+      const response = await withTimeout(
+        retryWithBackoff(async () => {
+          return await ai.models.generateContent({
+            model,
+            contents: userPrompt,
+            config: {
+              systemInstruction,
+              responseMimeType: "application/json",
+            },
+          });
+        }, 1, 400),
+        25000,
+        `Gemini Quiz (${model})`
+      );
 
       if (response?.text) {
         return { text: response.text, modelUsed: model };
       }
     } catch (err: any) {
-      console.warn(`[Gemini API] Quiz error with ${model}:`, err?.message || err);
+      const errMsg = err?.message || String(err);
+      console.warn(`[Gemini API] Quiz error with ${model}:`, errMsg);
+      if (errMsg.includes("API_KEY_INVALID") || errMsg.includes("API key not valid") || errMsg.includes("403")) {
+        break;
+      }
     }
   }
   return null;
@@ -280,15 +306,9 @@ async function callOpenRouterChat(
   const apiKey = (process.env.OPENROUTER_API_KEY || process.env.OPEN_ROUTER_API_KEY || "").trim();
   if (!apiKey) return null;
 
-  // Prioritize free models first so zero-dollar accounts succeed, then fall back to standard models
   const models = preferredModels || [
     "meta-llama/llama-3.3-70b-instruct:free",
     "qwen/qwen-2.5-72b-instruct:free",
-    "meta-llama/llama-3.1-8b-instruct:free",
-    "mistralai/mistral-7b-instruct:free",
-    "meta-llama/llama-3.3-70b-instruct",
-    "deepseek/deepseek-chat",
-    "qwen/qwen-2.5-72b-instruct",
     "openai/gpt-4o-mini"
   ];
 
@@ -297,8 +317,8 @@ async function callOpenRouterChat(
       const payload: any = {
         model,
         messages,
-        temperature: 0.3,
-        max_tokens: 3500
+        temperature: 0.2,
+        max_tokens: 2500
       };
       if (jsonMode) {
         payload.response_format = { type: "json_object" };
@@ -307,11 +327,12 @@ async function callOpenRouterChat(
       console.log(`[OpenRouter] Attempting generation with model: ${model}...`);
       const res = await fetch("https://openrouter.ai/api/v1/chat/completions", {
         method: "POST",
+        signal: AbortSignal.timeout(12000),
         headers: {
           "Content-Type": "application/json",
           "Authorization": `Bearer ${apiKey}`,
-          "HTTP-Referer": "https://mca204.studyhub",
-          "X-Title": "MCA-204 Study Notes Hub"
+          "HTTP-Referer": "https://student-notes-hub.onrender.com",
+          "X-Title": "Student Notes Hub"
         },
         body: JSON.stringify(payload)
       });
@@ -326,6 +347,10 @@ async function callOpenRouterChat(
       } else {
         const errBody = await res.text().catch(() => "");
         console.warn(`[OpenRouter Notice] Model ${model} returned HTTP ${res.status}: ${errBody.slice(0, 180)}`);
+        if (res.status === 401 || res.status === 403) {
+          lastAiDiagnosticError = `OpenRouter rejected OPENROUTER_API_KEY (HTTP ${res.status}).`;
+          break;
+        }
       }
     } catch (err: any) {
       console.warn(`[OpenRouter Exception] Model ${model} fetch failed:`, err?.message || err);
@@ -342,13 +367,9 @@ async function callGroqChat(
   const apiKey = (process.env.GROQ_API_KEY || process.env.GROK_API_KEY || "").trim();
   if (!apiKey) return null;
 
-  // Active Groq models (mixtral-8x7b-32768 was deprecated on Groq)
   const models = preferredModels || [
     "llama-3.3-70b-versatile",
-    "llama-3.1-8b-instant",
-    "gemma2-9b-it",
-    "llama3-70b-8192",
-    "llama3-8b-8192"
+    "llama-3.1-8b-instant"
   ];
 
   for (const model of models) {
@@ -356,8 +377,8 @@ async function callGroqChat(
       const payload: any = {
         model,
         messages,
-        temperature: 0.3,
-        max_tokens: 3500
+        temperature: 0.2,
+        max_tokens: 2500
       };
       if (jsonMode) {
         payload.response_format = { type: "json_object" };
@@ -366,6 +387,7 @@ async function callGroqChat(
       console.log(`[Groq] Attempting generation with model: ${model}...`);
       const res = await fetch("https://api.groq.com/openai/v1/chat/completions", {
         method: "POST",
+        signal: AbortSignal.timeout(12000),
         headers: {
           "Content-Type": "application/json",
           "Authorization": `Bearer ${apiKey}`
@@ -383,6 +405,10 @@ async function callGroqChat(
       } else {
         const errBody = await res.text().catch(() => "");
         console.warn(`[Groq Notice] Model ${model} returned HTTP ${res.status}: ${errBody.slice(0, 180)}`);
+        if (res.status === 401 || res.status === 403) {
+          lastAiDiagnosticError = `Groq rejected GROQ_API_KEY (HTTP ${res.status}).`;
+          break;
+        }
       }
     } catch (err: any) {
       console.warn(`[Groq Exception] Model ${model} fetch failed:`, err?.message || err);
@@ -1981,9 +2007,11 @@ Output ONLY valid JSON in this format:
     try {
       const res = await fetch(`${targetUrl}${apiPath}`, {
         ...options,
+        signal: AbortSignal.timeout(15000),
         headers: {
           "Content-Type": "application/json",
           "Cache-Control": "no-cache",
+          "x-proxy-hop": "1",
           ...(options?.headers || {})
         }
       });
@@ -2132,7 +2160,7 @@ Output ONLY valid JSON in this format:
         embedUrl = `https://drive.google.com/file/d/${fileId}/preview`;
       }
 
-      // Extract text content if public Google Doc / Slides / Sheets export is accessible
+      // Extract text content if public Google Doc / Slides / Sheets / Drive PDF is accessible
       let extractedContent = "";
       if (fileId && (docMatch || presMatch || sheetMatch)) {
         try {
@@ -2141,11 +2169,30 @@ Output ONLY valid JSON in this format:
             : presMatch
             ? `https://docs.google.com/presentation/d/${fileId}/export?format=txt`
             : `https://docs.google.com/spreadsheets/d/${fileId}/export?format=csv`;
-          const fetchRes = await fetch(exportUrl, { headers: { "User-Agent": "CourseNotesHubBot/1.0" } });
+          const fetchRes = await fetch(exportUrl, {
+            signal: AbortSignal.timeout(8000),
+            headers: { "User-Agent": "CourseNotesHubBot/1.0" }
+          });
           if (fetchRes.ok) {
             const rawTxt = await fetchRes.text();
             if (rawTxt && rawTxt.trim().length > 30 && !rawTxt.trim().startsWith("<!DOCTYPE html")) {
               extractedContent = rawTxt.trim();
+            }
+          }
+        } catch {}
+      } else if (fileId && driveMatch) {
+        try {
+          const downloadUrl = `https://drive.google.com/uc?export=download&id=${fileId}`;
+          const fetchRes = await fetch(downloadUrl, {
+            signal: AbortSignal.timeout(10000),
+            headers: { "User-Agent": "CourseNotesHubBot/1.0" }
+          });
+          if (fetchRes.ok) {
+            const arrayBuf = await fetchRes.arrayBuffer();
+            const pdfBuf = Buffer.from(arrayBuf);
+            const parsedPdf = await parsePdfBuffer(pdfBuf);
+            if (parsedPdf.text && parsedPdf.text.trim().length > 30) {
+              extractedContent = parsedPdf.text.trim();
             }
           }
         } catch {}
@@ -2620,22 +2667,24 @@ Output ONLY valid JSON in this format:
     res.json({ success: true, message: `Announcement ${annId} removed from storage and ChromaDB.` });
   });
 
-  // AI Notes Assistant API route using OpenRouter or Groq with Full PDF RAG
+  // AI Notes Assistant API route with ChromaDB RAG + Subject-Aware Exam Accuracy
   app.post("/api/chat", async (req, res) => {
     try {
       const { prompt, context, activeDocument } = req.body;
-      if (!prompt) {
+      if (!prompt || typeof prompt !== "string" || !prompt.trim()) {
         return res.status(400).json({ error: "Prompt is required" });
       }
 
       lastAiDiagnosticError = null;
 
-      const geminiApiKey = process.env.GEMINI_API_KEY;
-      const groqApiKey = process.env.GROQ_API_KEY || process.env.GROK_API_KEY;
-      const openrouterApiKey = process.env.OPENROUTER_API_KEY;
+      const geminiApiKey = (process.env.GEMINI_API_KEY || "").trim();
+      const groqApiKey = (process.env.GROQ_API_KEY || process.env.GROK_API_KEY || "").trim();
+      const openrouterApiKey = (process.env.OPENROUTER_API_KEY || process.env.OPEN_ROUTER_API_KEY || "").trim();
 
-      // If local AI keys are not set, proxy request to remote Teacher service
-      if (!geminiApiKey && !groqApiKey && !openrouterApiKey && teacherApiUrl) {
+      // Only proxy to remote Teacher service if it's a genuinely different host and we haven't already hopped
+      const reqHost = String(req.get("host") || "").toLowerCase();
+      const isSelfHost = teacherApiUrl && reqHost && teacherApiUrl.toLowerCase().includes(reqHost);
+      if (!geminiApiKey && !groqApiKey && !openrouterApiKey && teacherApiUrl && !isSelfHost && !req.headers["x-proxy-hop"]) {
         const remoteChat = await fetchFromTeacher("/api/chat", {
           method: "POST",
           body: JSON.stringify(req.body)
@@ -2645,173 +2694,258 @@ Output ONLY valid JSON in this format:
         }
       }
 
-      // Smart RAG Context Ranking & Context Assembly
-      let ragContextText = context || "";
+      const isBoilerplateContent = (rawText: string) => {
+        const text = (rawText || "").trim();
+        return (
+          text.length < 100 ||
+          text.includes("Source Material: [Open in") ||
+          text.includes("live sandbox iframe viewer") ||
+          text.includes("Interactive course notes, slides, and study reference for") ||
+          (text.includes("Google Slides") && text.length < 240)
+        );
+      };
 
-      // 0. Query ChromaDB Cloud Vector Database for semantic chunks
+      const cleanMarkdownLinks = (txt: string) =>
+        (txt || "")
+          .replace(/\[.*?\]\(https?:\/\/(docs|drive)\.google\.com\/.*?\)/g, "")
+          .replace(/https?:\/\/(docs|drive)\.google\.com\/\S+/g, "")
+          .replace(/Source Material:.*$/gim, "")
+          .trim();
+
+      const queryLower = prompt.toLowerCase();
+      const stopWords = new Set([
+        "what", "state", "define", "explain", "describe", "discuss", "write", "give", "list",
+        "compare", "about", "with", "from", "that", "this", "their", "them", "they", "have",
+        "mark", "marks", "question", "answer", "short", "brief", "detail", "detailed",
+        "impact", "importance", "notes", "page", "unit", "exam"
+      ]);
+      const keywords = queryLower
+        .replace(/[^a-z0-9\s]/gi, " ")
+        .split(/\s+/)
+        .filter((w: string) => w.length > 2 && !stopWords.has(w));
+
+      // 1. Collect ChromaDB Cloud Vector Matches (preserved, never overwritten)
+      let chromaContextBlock = "";
+      let chromaMatches: any[] = [];
       try {
         const chromaPromise = queryChroma(prompt, {
           docId: activeDocument?.id,
-          nResults: 6,
+          nResults: 5,
           publishedOnly: req.body?.role !== "teacher"
         });
         const timeoutPromise = new Promise<any[]>((resolve) => setTimeout(() => resolve([]), 2500));
-        const chromaMatches = await Promise.race([chromaPromise, timeoutPromise]);
+        chromaMatches = await Promise.race([chromaPromise, timeoutPromise]);
+
+        // If doc-scoped query returned nothing (e.g., Google Drive PDF without extracted chunks), also search across the entire course
+        if (Array.isArray(chromaMatches) && chromaMatches.length === 0 && activeDocument?.id) {
+          const globalPromise = queryChroma(prompt, {
+            nResults: 5,
+            publishedOnly: req.body?.role !== "teacher"
+          });
+          chromaMatches = await Promise.race([globalPromise, new Promise<any[]>((resolve) => setTimeout(() => resolve([]), 2000))]);
+        }
 
         if (Array.isArray(chromaMatches) && chromaMatches.length > 0) {
-          ragContextText += `\n\n[=== CHROMADB CLOUD VECTOR DATABASE MATCHES (Database: rag-notes-application1) ===]\n` +
-            chromaMatches.map((m, idx) => `[Vector Match #${idx + 1} - ${m.metadata?.docTitle} - Page ${m.metadata?.pageNumber}]\n${m.document}`).join("\n\n-------------------\n\n");
+          chromaContextBlock = chromaMatches
+            .filter((m) => !isBoilerplateContent(m?.document || ""))
+            .slice(0, 4)
+            .map((m, idx) => `[Vector Match #${idx + 1} — ${m.metadata?.docTitle || "Course Notes"} (Page ${m.metadata?.pageNumber || 1})]\n${cleanMarkdownLinks(m.document).slice(0, 1400)}`)
+            .join("\n\n");
         }
       } catch (chromaQueryErr: any) {
         console.warn("[ChromaDB] RAG query notice:", chromaQueryErr?.message);
       }
 
-      if (activeDocument && activeDocument.sections && activeDocument.sections.length > 0) {
-        const sections: any[] = activeDocument.sections;
-        const queryLower = prompt.toLowerCase();
-        const keywords = queryLower
-          .replace(/[^a-z0-9\s]/gi, " ")
-          .split(/\s+/)
-          .filter((w: string) => w.length > 2);
+      // 2. Active document & same-subject sections (including lazy Google Drive PDF/Docs/Slides extraction if needed)
+      let activeSections: any[] = Array.isArray(activeDocument?.sections) ? activeDocument.sections : [];
+      const meaningfulActive = activeSections.filter((s: any) => !isBoilerplateContent(s?.contentMarkdown || ""));
 
-        // Filter out boilerplate Google Drive iframe links so RAG context contains high-density content
-        const isBoilerplate = (sec: any) => {
-          const content = sec?.contentMarkdown || "";
-          return content.includes("Source Material: [Open in") ||
-                 content.includes("live sandbox iframe viewer") ||
-                 (content.includes("Google Slides") && content.length < 220);
-        };
-
-        const meaningfulSections = sections.filter(s => !isBoilerplate(s));
-        const candidateSections = meaningfulSections.length > 0 ? meaningfulSections : sections;
-
-        // Hybrid semantic + keyword scoring with Title boosting (inspired by Charitra textbook RAG)
-        let selectedSections = candidateSections;
-        if (candidateSections.length > 6 && keywords.length > 0) {
-          const scored = candidateSections.map((s: any) => {
-            const titleLower = (s.title || "").toLowerCase();
-            const bodyLower = (s.contentMarkdown || "").toLowerCase();
-            let score = 0;
-
-            for (const kw of keywords) {
-              if (titleLower.includes(kw)) score += 10; // High weight for title matches (strongest signal)
-              if (bodyLower.includes(kw)) score += 2;
+      // If active doc is a Google link whose text hasn't been extracted yet, attempt a quick 4s live extraction
+      if (meaningfulActive.length === 0 && activeDocument?.originalFileUrl) {
+        const gUrl = String(activeDocument.originalFileUrl);
+        try {
+          const gDoc = gUrl.match(/\/document\/d\/([a-zA-Z0-9_-]+)/);
+          const gPres = gUrl.match(/\/presentation\/d\/([a-zA-Z0-9_-]+)/);
+          const gDrive = gUrl.match(/\/file\/d\/([a-zA-Z0-9_-]+)/);
+          let extractedTxt = "";
+          if (gDoc || gPres) {
+            const expUrl = gDoc
+              ? `https://docs.google.com/document/d/${gDoc[1]}/export?format=txt`
+              : `https://docs.google.com/presentation/d/${gPres[1]}/export?format=txt`;
+            const gRes = await fetch(expUrl, { signal: AbortSignal.timeout(4000) });
+            if (gRes.ok) {
+              const txt = await gRes.text();
+              if (txt && txt.length > 60 && !txt.trim().startsWith("<!DOCTYPE html")) {
+                extractedTxt = txt.trim();
+              }
             }
-
-            if (titleLower.includes(queryLower)) score += 20; // Full query phrase bonus
-            if (bodyLower.includes(queryLower)) score += 10;
-
-            return { section: s, score };
-          });
-
-          scored.sort((a, b) => b.score - a.score);
-          // Charitra standard: Fetch top-k=3 most relevant textbook excerpts
-          const topMatches = scored.filter(s => s.score > 0).slice(0, 3).map(s => s.section);
-
-          if (topMatches.length > 0) {
-            selectedSections = topMatches;
-          } else {
-            selectedSections = candidateSections.slice(0, 3);
+          } else if (gDrive) {
+            const dlUrl = `https://drive.google.com/uc?export=download&id=${gDrive[1]}`;
+            const gRes = await fetch(dlUrl, { signal: AbortSignal.timeout(4500) });
+            if (gRes.ok) {
+              const buf = Buffer.from(await gRes.arrayBuffer());
+              const parsed = await parsePdfBuffer(buf);
+              if (parsed.text && parsed.text.length > 60) {
+                extractedTxt = parsed.text.trim();
+              }
+            }
           }
-        } else {
-          selectedSections = candidateSections.slice(0, 3);
-        }
-
-        // Clean and format top-k=3 context chunks (Charitra specification)
-        ragContextText = selectedSections.map((s: any, idx: number) => {
-          const raw = (s.contentMarkdown || "")
-            .replace(/\[.*?\]\(https?:\/\/docs\.google\.com\/.*?\)/g, "")
-            .replace(/https?:\/\/docs\.google\.com\/\S+/g, "")
-            .replace(/Source Material:.*$/gim, "")
-            .trim();
-          return `<chunk_${idx + 1}>\nSection: ${s.title}\n${raw.slice(0, 1500)}\n</chunk_${idx + 1}>`;
-        }).join("\n\n");
+          if (extractedTxt) {
+            activeSections = [{ id: "live-google-extract", title: activeDocument.title, contentMarkdown: extractedTxt, pageNumber: 1 }];
+          }
+        } catch {}
       }
 
-      const queryLower = prompt.toLowerCase();
-      const is2MarksOrShort = 
-        queryLower.includes("2 mark") || 
-        queryLower.includes("2 marks") || 
-        queryLower.includes("2m") || 
-        queryLower.includes("short") || 
-        queryLower.includes("brief") || 
-        queryLower.includes("define") || 
-        queryLower.includes("easier") || 
-        queryLower.includes("easy") || 
-        queryLower.includes("simple") || 
+      const candidateSections = activeSections.filter((s: any) => !isBoilerplateContent(s?.contentMarkdown || ""));
+      let selectedDocContext = "";
+      if (candidateSections.length > 0) {
+        const scored = candidateSections.map((s: any) => {
+          const titleLower = (s.title || "").toLowerCase();
+          const bodyLower = (s.contentMarkdown || "").toLowerCase();
+          let score = 0;
+          for (const kw of keywords) {
+            if (titleLower.includes(kw)) score += 10;
+            if (bodyLower.includes(kw)) score += 3;
+          }
+          if (keywords.length > 0 && titleLower.includes(keywords.join(" "))) score += 20;
+          return { section: s, score };
+        });
+        scored.sort((a, b) => b.score - a.score);
+        const topMatches = scored.filter(s => s.score > 0).slice(0, 4).map(s => s.section);
+        const picked = topMatches.length > 0 ? topMatches : candidateSections.slice(0, 3);
+        selectedDocContext = picked
+          .map((s: any, idx: number) => `<chunk_${idx + 1}>\nSection: ${s.title}\n${cleanMarkdownLinks(s.contentMarkdown).slice(0, 1800)}\n</chunk_${idx + 1}>`)
+          .join("\n\n");
+      }
+
+      // 3. Also search across other documents in the same subject / course for matching terms
+      let crossDocMatches: Array<{ docTitle: string; secTitle: string; text: string; score: number }> = [];
+      for (const d of serverDocuments) {
+        for (const s of (d.sections || [])) {
+          const md = s.contentMarkdown || "";
+          if (isBoilerplateContent(md)) continue;
+          const fullText = `${s.title || ""} ${md}`.toLowerCase();
+          let score = 0;
+          for (const kw of keywords) {
+            if (fullText.includes(kw)) score += 3;
+          }
+          if (activeDocument?.subject && d.subject === activeDocument.subject) score += 1;
+          if (score > 1) {
+            crossDocMatches.push({
+              docTitle: d.title,
+              secTitle: s.title,
+              text: cleanMarkdownLinks(md),
+              score
+            });
+          }
+        }
+      }
+      crossDocMatches.sort((a, b) => b.score - a.score);
+      const crossDocBlock = crossDocMatches
+        .slice(0, 3)
+        .map((m, idx) => `[Course Note Match #${idx + 1} — "${m.docTitle}" / ${m.secTitle}]\n${m.text.slice(0, 1200)}`)
+        .join("\n\n");
+
+      const cleanedClientContext = !isBoilerplateContent(context || "")
+        ? cleanMarkdownLinks(String(context || "")).slice(0, 4000)
+        : "";
+
+      const combinedRagContext = [
+        selectedDocContext,
+        chromaContextBlock,
+        crossDocBlock,
+        (!selectedDocContext && !chromaContextBlock) ? cleanedClientContext : ""
+      ]
+        .filter(Boolean)
+        .join("\n\n---\n\n")
+        .slice(0, 12000);
+
+      const is2MarksOrShort =
+        queryLower.includes("2 mark") ||
+        queryLower.includes("2 marks") ||
+        queryLower.includes("2m") ||
+        queryLower.includes("short") ||
+        queryLower.includes("brief") ||
+        queryLower.includes("define") ||
+        queryLower.includes("easier") ||
+        queryLower.includes("easy") ||
+        queryLower.includes("simple") ||
         queryLower.includes("beginner");
 
-      const is10MarksOrEssay = 
-        queryLower.includes("10 mark") || 
-        queryLower.includes("10 marks") || 
-        queryLower.includes("10m") || 
-        queryLower.includes("16 mark") || 
-        queryLower.includes("detailed") || 
-        queryLower.includes("essay") || 
+      const is10MarksOrEssay =
+        queryLower.includes("10 mark") ||
+        queryLower.includes("10 marks") ||
+        queryLower.includes("10m") ||
+        queryLower.includes("16 mark") ||
+        queryLower.includes("detailed") ||
+        queryLower.includes("essay") ||
         queryLower.includes("in-depth");
 
-      const wantsSimpleWords = 
-        queryLower.includes("easier") || 
-        queryLower.includes("easy") || 
-        queryLower.includes("simple") || 
-        queryLower.includes("understand") || 
-        queryLower.includes("beginner") || 
-        queryLower.includes("plain") || 
+      const wantsSimpleWords =
+        queryLower.includes("easier") ||
+        queryLower.includes("easy") ||
+        queryLower.includes("simple") ||
+        queryLower.includes("understand") ||
+        queryLower.includes("beginner") ||
+        queryLower.includes("plain") ||
         queryLower.includes("layman");
+
+      const activeSubjectLabel = activeDocument?.subject || activeDocument?.unitTitle || "Computer Science & Software Engineering";
+      const activeDocTitle = activeDocument?.title || "Course Study Notes";
 
       let structureInstructions = "";
       if (is2MarksOrShort) {
         structureInstructions = `
-STUDENT SPECIFICALLY REQUESTED A 2-MARK / SHORT / EASY-TO-UNDERSTAND ANSWER:
-- Keep the response short, clear, and easy to understand (under 120 words total).
-- DO NOT generate a massive 5-part essay.
-- DO NOT generate ASCII diagrams, huge tables, or dense ISO/IEEE ring-trapping jargon.
-- Format strictly as:
-  ### 🟢 2-Mark Exam Answer (Easy to Understand)
-  **💡 Simple Meaning:** (1-2 clear, intuitive sentences in plain English using a simple real-world analogy so any student can understand it immediately).
-  **📝 Key Exam Points (for 2 Marks):**
-  - **Core Definition:** (The formal concept with the essential scoring keyword, e.g. Virtual Machine Monitor / VMM)
-  - **How it Works / Categories:** (e.g. Type-1 Bare-Metal vs Type-2 Hosted, or primary function)
-  - **Key Benefit:** (e.g. Hardware pooling, isolation, and cost savings)`;
+STUDENT REQUESTED A 2-MARK / CONCISE EXAM ANSWER:
+- Keep the answer crisp, exam-ready, and accurate (around 70–130 words total).
+- Answer EVERY part of the question directly (e.g., both the definition AND its impact/benefit/example if asked).
+- Do NOT pad with massive essays, ASCII diagrams, or unrelated topics.
+- Format cleanly as:
+  ### 🟢 2-Mark Exam Answer
+  **Definition:** (Clear, exact technical definition)
+  **Key Points / Impact:**
+  - **Point 1:** ...
+  - **Point 2:** ...
+  - *(Include a tiny 2–3 line code/practical example only if it clarifies the concept).*`;
       } else if (is10MarksOrEssay) {
         structureInstructions = `
-STUDENT REQUESTED A 10-MARK / IN-DEPTH ARCHITECTURAL ANSWER:
-- Format in 5 structured sections:
+STUDENT REQUESTED A 10-MARK / IN-DEPTH EXAM ANSWER:
+- Format clearly in structured sections:
   ### 1. Direct Definition & Core Concept
-  ### 2. Technical Pillars & Mechanics
-  ### 3. Architecture & Working Flow (including an ASCII diagram in a \`\`\`ascii code block)
-  ### 4. Technical Comparison Table (Markdown table)
-  ### 5. Exam & Key Takeaways`;
+  ### 2. Detailed Explanation & Key Principles
+  ### 3. Practical Example / Diagram (include code block or \`\`\`ascii diagram if appropriate)
+  ### 4. Comparison / Trade-offs (Markdown table if relevant)
+  ### 5. Exam Key Takeaways`;
       } else {
         structureInstructions = `
 STRUCTURED ACADEMIC ANSWER:
-- Format in clear, accessible sections:
-  ### 1. Overview & Simple Definition (Clear explanation so any student can grasp it immediately)
-  ### 2. Technical Pillars & Working Mechanism (3-4 crisp bullet points with key technical terms in bold)
-  ### 3. Key Types / Real-World Cloud Examples (e.g., AWS, VMware)
-  ### 4. Exam Scoring Takeaways`;
+- Format in clear, easy-to-study exam sections:
+  ### 1. Definition & Simple Explanation
+  ### 2. Core Principles / Key Points (3–4 crisp bullet points with key terms bolded)
+  ### 3. Concrete Example / Practical Impact
+  ### 4. Exam Key Takeaways`;
       }
 
-      const systemInstruction = `You are an expert Academic Tutor for the MCA course (Cloud Computing & Distributed Systems).
-Your goal is to teach students effectively: explain concepts in clear, easy-to-understand language while ensuring they know the exact technical keywords to score full marks in exams.
+      const systemInstruction = `You are an accurate Academic Tutor for university Computer Science students.
+Active Course Subject: "${activeSubjectLabel}" | Active Material: "${activeDocTitle}".
 
-ZERO CONVERSATIONAL FILLER:
-- Begin immediately with the answer. Do NOT include greetings ("Hello!", "Sure!", "Based on the text").
-- Ground your answer in standard computer science curriculum and the provided context.
-${wantsSimpleWords ? "- The student explicitly requested 'easier words' / 'simple language': explain in simple, intuitive language first, using relatable analogies before introducing technical terms." : ""}
+STRICT ACCURACY & GROUNDING RULES:
+1. Begin immediately with the answer—zero greetings ("Hello!", "Sure!") or filler.
+2. Answer strictly about the EXACT topic asked in the student's question. NEVER substitute unrelated subjects (for instance, never invent cloud networking or AWS concepts when asked about coding standards, whitespace, software engineering, databases, etc.).
+3. NEVER treat a document filename or title (such as "${activeDocTitle}") as a technical concept in your definition.
+4. Use the Retrieved Course Notes Context below whenever it contains relevant information. If the retrieved context is incomplete or came from an external link without embedded text, answer accurately using verified Computer Science / Software Engineering / "${activeSubjectLabel}" knowledge.
+5. Verify every technical fact so students can safely study this answer for exams.
+${wantsSimpleWords ? "6. Use plain, simple English with a relatable everyday or code example so any student grasps it quickly." : ""}
 
 ${structureInstructions}`;
 
-      const fullPromptWithContext = `${systemInstruction}
+      const fullPromptWithContext = `Active Course Subject: ${activeSubjectLabel}
+Active Document: ${activeDocTitle}
 
-==================================================
-Context:
-${ragContextText || "Core MCA Course Syllabus (VLANs, Networking, Cloud Architecture, Virtualization)"}
-==================================================
+Retrieved Course Notes Context:
+${combinedRagContext || "(No extracted text chunks available from this linked file; answer accurately using verified curriculum knowledge for the subject and question below.)"}
 
-Question: ${prompt}
-
-Instruction: Answer the question clearly and directly according to the requested mark weightage and simplicity instructions.`;
+Student Question: ${prompt}`;
 
       // 1. Try Google Gemini AI first
       const geminiResult = await callGeminiChat(systemInstruction, fullPromptWithContext);
@@ -2819,98 +2953,76 @@ Instruction: Answer the question clearly and directly according to the requested
         return res.json({ text: geminiResult.text, provider: `Google Gemini (${geminiResult.modelUsed})` });
       }
 
-      // 2. Try OpenRouter AI if configured
+      // 2. Try OpenRouter AI
       const openRouterResult = await callOpenRouterChat([
         { role: "system", content: systemInstruction },
-        { role: "user", content: `Retrieved Document Context:\n${ragContextText}\n\nUser Question: ${prompt}` }
+        { role: "user", content: fullPromptWithContext }
       ]);
       if (openRouterResult?.text) {
         return res.json({ text: openRouterResult.text, provider: `OpenRouter (${openRouterResult.modelUsed})` });
       }
 
-      // 3. Try Groq API key if available
+      // 3. Try Groq AI
       const groqResult = await callGroqChat([
         { role: "system", content: systemInstruction },
-        { role: "user", content: `Retrieved Document Context:\n${ragContextText}\n\nUser Question: ${prompt}` }
+        { role: "user", content: fullPromptWithContext }
       ]);
       if (groqResult?.text) {
         return res.json({ text: groqResult.text, provider: `Groq (${groqResult.modelUsed})` });
       }
 
-      // 4. Smart Dynamic Fallback RAG Engine (Local text extraction & search)
+      // 4. Honest Verified Fallbacks (ONLY curated exact-topic matches OR verbatim note excerpts—NEVER fabricated templates)
       const markAnswer = getMarkBasedAnswer(prompt, activeDocument);
       if (markAnswer) {
-        return res.json({ text: markAnswer, provider: "RAG Document Engine" });
+        return res.json({ text: markAnswer, provider: "Course Knowledge Catalog" });
       }
 
-      const docName = activeDocument?.title || "AWS Lecture Notes";
-      const sectionsList: any[] = activeDocument?.sections || [];
-      const keywords = queryLower
-        .replace(/[^a-z0-9\s]/gi, " ")
-        .split(/\s+/)
-        .filter((w: string) => w.length > 2);
-
-      // Search matching sections, ignoring empty Google Link placeholders
-      const isGoogleLinkPlaceholder = (text: string) => {
-        return text.includes("Source Material: [Open in") || 
-               text.includes("Service: Google Slides") || 
-               text.includes("Service: Google Drive") ||
-               text.includes("live sandbox iframe viewer") ||
-               text.trim().length < 180;
-      };
-
-      let matchedSections = sectionsList.filter((s: any) => {
-        const text = (s.title + " " + s.contentMarkdown).toLowerCase();
-        return keywords.some((kw: string) => text.includes(kw));
-      });
-
-      const substantiveSections = matchedSections.filter((s: any) => !isGoogleLinkPlaceholder(s.contentMarkdown || ""));
-
-      let answer = `### 💡 RAG Assistant Answer\n\n`;
-
-      if (substantiveSections.length > 0) {
-        answer += `Based on your selected document **"${docName}"**, here is the relevant synthesized information for **"${prompt}"**:\n\n`;
-        substantiveSections.slice(0, 4).forEach((sec: any) => {
-          answer += `#### 📌 ${sec.title}\n${sec.contentMarkdown.slice(0, 800)}\n\n`;
-        });
-      } else {
-        const matchedTopic = topicCatalog.find(t => t.matchFn(prompt.toLowerCase()));
-        if (matchedTopic) {
-          answer += `**Topic:** ${matchedTopic.title}\n\n` +
-            `Based on your curriculum syllabus, here is the comprehensive breakdown for **"${prompt}"**:\n\n` +
-            matchedTopic.points.map(pt => `- ${pt}`).join("\n\n") +
-            `\n\n*(Verified Academic Syllabus Material)*`;
-        } else {
-          // If no specific topic matched in catalog, extract keywords and search across all documents
-          let anyDocMatches: any[] = [];
-          for (const d of serverDocuments) {
-            for (const s of (d.sections || [])) {
-              const fullText = (s.title + " " + (s.contentMarkdown || "")).toLowerCase();
-              if (keywords.some((kw: string) => fullText.includes(kw)) && !isGoogleLinkPlaceholder(s.contentMarkdown || "")) {
-                anyDocMatches.push({ docTitle: d.title, secTitle: s.title, text: s.contentMarkdown });
-              }
-            }
-          }
-          if (anyDocMatches.length > 0) {
-            answer += `Found relevant information in your course notes for **"${prompt}"**:\n\n`;
-            anyDocMatches.slice(0, 3).forEach(m => {
-              answer += `#### 📌 ${m.docTitle} • ${m.secTitle}\n${m.text.slice(0, 600)}\n\n`;
-            });
-          } else {
-            const nextSteps = lastAiDiagnosticError
-              ? `⚠️ **AI Configuration Notice:** ${lastAiDiagnosticError}`
-              : `Please refer to the corresponding lecture slides in the sandbox viewer, or add an active \`GEMINI_API_KEY\` (starting with \`AIzaSy...\` from https://aistudio.google.com/apikey) or \`GROQ_API_KEY\` (from https://console.groq.com/keys) in your Render Environment Variables for live, real-time AI responses to any arbitrary question!`;
-
-            answer += `**Question:** ${prompt}\n\n` +
-              `Based on your course materials for **"${docName}"**:\n\n` +
-              `- **Concept Scope:** "${prompt}"\n` +
-              `- **Curriculum Reference:** This topic is part of your MCA syllabus.\n` +
-              `- **Next Steps:** ${nextSteps}`;
-          }
+      // Check verbatim excerpts where at least 1 strong topic keyword actually appears in real non-boilerplate content
+      const realMatches: Array<{ title: string; snippet: string; score: number }> = [];
+      for (const m of chromaMatches) {
+        const txt = cleanMarkdownLinks(m?.document || "");
+        if (!txt || isBoilerplateContent(txt)) continue;
+        const lower = txt.toLowerCase();
+        const hits = keywords.filter((kw: string) => lower.includes(kw)).length;
+        if (hits > 0) {
+          realMatches.push({
+            title: `${m.metadata?.docTitle || "Course Notes"} (Page ${m.metadata?.pageNumber || 1})`,
+            snippet: txt.slice(0, 900),
+            score: hits
+          });
+        }
+      }
+      for (const m of crossDocMatches) {
+        const hits = keywords.filter((kw: string) => m.text.toLowerCase().includes(kw)).length;
+        if (hits > 0) {
+          realMatches.push({
+            title: `${m.docTitle} • ${m.secTitle}`,
+            snippet: m.text.slice(0, 900),
+            score: hits
+          });
         }
       }
 
-      return res.json({ text: answer, provider: "RAG Document Engine" });
+      if (realMatches.length > 0) {
+        realMatches.sort((a, b) => b.score - a.score);
+        let excerptAnswer = `### 📖 Direct Excerpts Found in Your Course Notes\n\n`;
+        realMatches.slice(0, 3).forEach((m) => {
+          excerptAnswer += `#### 📌 ${m.title}\n${m.snippet}\n\n`;
+        });
+        excerptAnswer += `> *Note: Live AI synthesis is currently unavailable (${lastAiDiagnosticError || "no active AI API key configured"}), so exact matching excerpts from your notes are shown above.*`;
+        return res.json({ text: excerptAnswer, provider: "Course Notes Search" });
+      }
+
+      // No AI provider succeeded and no matching text excerpt was found—return a clear diagnostic error instead of a fake answer
+      const diagnosticMessage = lastAiDiagnosticError
+        ? lastAiDiagnosticError
+        : (!geminiApiKey && !openrouterApiKey && !groqApiKey)
+        ? "Live AI Tutor is not configured yet on the backend (missing GEMINI_API_KEY, OPENROUTER_API_KEY, or GROQ_API_KEY in Render Environment Variables)."
+        : "AI providers could not be reached right now and no matching text was indexed for this Google Drive link.";
+
+      return res.status(503).json({
+        error: diagnosticMessage
+      });
     } catch (err: any) {
       console.error("Error in /api/chat:", err);
       res.status(500).json({ error: err.message || "Failed to communicate with AI Assistant." });
@@ -3719,91 +3831,8 @@ Migrating legacy, on-premises infrastructure to AWS involves transitioning physi
     return `### 🟢 Exam Answer (2 Marks Weightage — 4 Key Points)\n\n**Question Topic:** ${singleTopic.title}\n\n**Answer (4 Key Points):**\n` + singleTopic.points.map((pt, i) => `${i + 1}. ${pt}`).join("\n");
   }
 
-  // DYNAMIC DOCUMENT CONTEXT EXTRACTOR (When no catalog topic matched)
-  const docName = activeDocument?.title || "AWS Lecture Notes";
-  const sectionsList: any[] = activeDocument?.sections || [];
-  const queryLower = prompt.toLowerCase();
-  const keywords = queryLower
-    .replace(/[^a-z0-9\s]/gi, " ")
-    .split(/\s+/)
-    .filter((w: string) => w.length > 2 && !["explain", "marks", "mark", "ans", "answer", "sheet", "page", "means"].includes(w));
-
-  // Charitra Anti-Hallucination: Strictly filter out Google Drive/Slides URL placeholders
-  const isBoilerplate = (text: string) => {
-    return text.includes("Source Material: [Open in") ||
-           text.includes("live sandbox iframe viewer") ||
-           text.includes("docs.google.com/presentation") ||
-           text.includes("Service: Google Slides") ||
-           text.includes("Service: Google Drive") ||
-           text.trim().length < 80;
-  };
-
-  let matchedSections = sectionsList.filter((s: any) => {
-    const text = (s.title + " " + (s.subtitle || "") + " " + (s.contentMarkdown || "")).toLowerCase();
-    return keywords.some((kw: string) => text.includes(kw));
-  });
-
-  // Filter out boilerplate sections
-  matchedSections = matchedSections.filter((s: any) => !isBoilerplate(s.contentMarkdown || ""));
-
-  if (matchedSections.length === 0 && sectionsList.length > 0) {
-    matchedSections = sectionsList.filter((s: any) => !isBoilerplate(s.contentMarkdown || "")).slice(0, 5);
-  }
-
-  const topicName = keywords.length > 0 
-    ? keywords.map(w => w.toUpperCase()).join(" ")
-    : "Cloud Networking & System Architecture";
-
-  // If no sections match the topic, return null so caller can perform cross-document or intelligent lookup
-  if (matchedSections.length === 0) {
-    return null;
-  }
-
-  const extractedContent = matchedSections.slice(0, 4).map((s: any) => 
-    `#### 📌 Section: ${s.title}\n${s.contentMarkdown.slice(0, 900)}`
-  ).join("\n\n");
-
-  if (is2Marks) {
-    return `### 🟢 Exam Answer (2 Marks Weightage — 4 Key Points)
-
-**Question Topic:** ${topicName} (Retrieved from "${docName}")
-
-**Answer (4 Key Points):**
-1. **Definition:** ${matchedSections[0]?.title || topicName} represents a key operational component in cloud infrastructure designed to enhance performance, reliability, and security.
-2. **Core Functionality:** Operating within the network ecosystem, it provides automated orchestration, utility routing, and fault redundancy.
-3. **Primary Benefit:** Eliminates legacy manual administration overhead, reducing operational costs and ensuring data availability.
-4. **Implementation Context:** Integrates directly with core cloud services including compute, VPC networking, and storage tiers.`;
-  }
-
-  return `### 🟡 Exam Answer (6 Marks Weightage — Structured 2-Page A4 Format)
-
-**Question Topic:** ${topicName} (Retrieved from "${docName}")
-
----
-
-### 1. 📌 Overview & Definition
-Based on your course materials **"${docName}"**, **${topicName}** forms a critical topic in the curriculum. It provides software-defined, scalable solutions designed to solve traditional data center constraints.
-
----
-
-### 2. 📖 Core Explanations & Lecture Notes Context
-
-${extractedContent}
-
----
-
-### 3. 🔄 Step-by-Step Operational Workflow
-1. **Initialization:** The administrator or automated orchestration script triggers resource allocation via API.
-2. **Configuration & Security:** Security rules and IAM permissions enforce least-privilege boundary rules.
-3. **Execution & Processing:** Workloads execute across isolated compute nodes with automated load management.
-4. **Monitoring & Persistence:** Health logs are monitored continuously while persistent data is stored safely in redundant storage.
-
----
-
-### 4. 📊 Key Summary & Examination Takeaways
-- **Scalability:** Scale infrastructure on-demand without long-term hardware contracts.
-- **Fault Tolerance:** Automated failover mechanisms keep services running through hardware outages.
-- **Cost Efficiency:** Utility pay-as-you-go pricing optimizes IT budgets.`;
+  // Never synthesize bogus boilerplate text when no catalog topic matched—let caller return verbatim note excerpts or a clear diagnostic error.
+  return null;
 }
 
   // Technical Documentation PDF endpoints
