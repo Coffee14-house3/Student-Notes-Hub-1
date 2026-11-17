@@ -90,7 +90,7 @@ export const TextToSpeechPlayer: React.FC<Props> = ({
   };
 
   return (
-    <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 bg-[#18181c] border border-amber-500/40 rounded-2xl p-3 sm:px-5 shadow-2xl flex items-center gap-3 sm:gap-4 text-xs text-slate-100 max-w-lg w-[92%] animate-in fade-in slide-in-from-bottom-4">
+    <div className="fixed bottom-[4.75rem] sm:bottom-6 left-1/2 -translate-x-1/2 z-50 bg-[#18181c] border border-amber-500/40 rounded-2xl p-2.5 sm:px-5 shadow-2xl flex items-center gap-2.5 sm:gap-4 text-xs text-slate-100 max-w-lg w-[94%] animate-in fade-in slide-in-from-bottom-4">
       <div className="p-2 bg-amber-500/20 text-amber-400 rounded-xl shrink-0">
         <Volume2 className="w-5 h-5" />
       </div>
@@ -100,44 +100,53 @@ export const TextToSpeechPlayer: React.FC<Props> = ({
         <div className="text-xs font-bold text-white truncate">{pageTitle || "Page Audio Content"}</div>
       </div>
 
-      <div className="flex items-center gap-2 shrink-0">
+      <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
         {isPlaying ? (
           <button
+            type="button"
             onClick={handlePause}
-            className="p-2 bg-amber-500 text-slate-950 hover:bg-amber-400 rounded-xl font-bold cursor-pointer transition-transform active:scale-95"
+            className="min-w-[40px] min-h-[40px] p-2 bg-amber-500 text-slate-950 hover:bg-amber-400 rounded-xl font-bold cursor-pointer transition-transform active:scale-95 flex items-center justify-center"
             title="Pause Reading"
+            aria-label="Pause Reading"
           >
             <Pause className="w-4 h-4 fill-slate-950" />
           </button>
         ) : (
           <button
+            type="button"
             onClick={handlePlay}
-            className="p-2 bg-amber-500 text-slate-950 hover:bg-amber-400 rounded-xl font-bold cursor-pointer transition-transform active:scale-95"
+            className="min-w-[40px] min-h-[40px] p-2 bg-amber-500 text-slate-950 hover:bg-amber-400 rounded-xl font-bold cursor-pointer transition-transform active:scale-95 flex items-center justify-center"
             title="Start Reading Aloud"
+            aria-label="Start Reading Aloud"
           >
             <Play className="w-4 h-4 fill-slate-950" />
           </button>
         )}
 
         <button
+          type="button"
           onClick={handleStop}
-          className="p-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl cursor-pointer"
+          className="min-w-[40px] min-h-[40px] p-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl cursor-pointer flex items-center justify-center"
           title="Stop Reading"
+          aria-label="Stop Reading"
         >
           <Square className="w-3.5 h-3.5 fill-slate-300" />
         </button>
 
         <button
+          type="button"
           onClick={toggleRate}
-          className="px-2.5 py-1.5 bg-[#26262e] hover:bg-[#32323c] text-amber-400 border border-amber-500/30 rounded-xl font-mono text-[11px] font-bold cursor-pointer flex items-center gap-1"
+          className="min-h-[40px] px-2.5 py-1.5 bg-[#26262e] hover:bg-[#32323c] text-amber-400 border border-amber-500/30 rounded-xl font-mono text-[11px] font-bold cursor-pointer flex items-center gap-1"
           title="Adjust Speed"
         >
           <FastForward className="w-3 h-3" /> {rate}x
         </button>
 
         <button
+          type="button"
           onClick={() => { handleStop(); onClose(); }}
-          className="p-1.5 text-slate-400 hover:text-white rounded-lg hover:bg-white/10"
+          className="min-w-[40px] min-h-[40px] p-1.5 text-slate-400 hover:text-white rounded-lg hover:bg-white/10 flex items-center justify-center cursor-pointer"
+          aria-label="Close Audio Player"
         >
           <X className="w-4 h-4" />
         </button>

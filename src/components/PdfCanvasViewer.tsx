@@ -349,29 +349,33 @@ export const PdfCanvasViewer: React.FC<Props> = ({
   return (
     <div className="w-full flex flex-col h-full bg-[#1e1e1e] border border-[#333] rounded-none overflow-hidden shadow-2xl font-sans text-slate-100 relative">
       {/* Top Toolbar */}
-      <div className="px-2.5 sm:px-4 py-2 bg-[#252528] border-b border-[#38383e] flex items-center justify-between gap-1.5 sm:gap-2 shrink-0 z-10 text-xs flex-wrap">
+      <div className="px-2 sm:px-4 py-1.5 sm:py-2 bg-[#252528] border-b border-[#38383e] flex items-center justify-between gap-1.5 sm:gap-2 shrink-0 z-10 text-xs flex-wrap">
         {/* Left: Page Navigation */}
         <div className="flex items-center gap-1 sm:gap-1.5">
           <button
+            type="button"
             onClick={() => handlePageChange(activePage - 1)}
             disabled={activePage <= 1}
-            className="p-1 sm:p-1.5 rounded-lg bg-[#303038] hover:bg-[#3d3d48] disabled:opacity-30 disabled:hover:bg-[#303038] text-slate-200 cursor-pointer"
+            className="min-w-[40px] min-h-[40px] sm:min-w-[32px] sm:min-h-[32px] p-1.5 rounded-lg bg-[#303038] hover:bg-[#3d3d48] disabled:opacity-30 disabled:hover:bg-[#303038] text-slate-200 cursor-pointer flex items-center justify-center"
             title="Previous Page"
+            aria-label="Previous Page"
           >
-            <ChevronLeft className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+            <ChevronLeft className="w-4 h-4" />
           </button>
-          <div className="flex items-center gap-1 text-[11px] sm:text-xs font-mono px-1.5 sm:px-2 py-0.5 sm:py-1 bg-[#161619] rounded border border-[#3b3b45]">
+          <div className="flex items-center gap-1 text-xs font-mono px-2 py-1 bg-[#161619] rounded-lg border border-[#3b3b45] tabular-nums">
             <span className="text-amber-400 font-bold">{activePage}</span>
             <span className="text-slate-500">/</span>
             <span className="text-slate-300">{numPages || 1}</span>
           </div>
           <button
+            type="button"
             onClick={() => handlePageChange(activePage + 1)}
             disabled={activePage >= numPages}
-            className="p-1 sm:p-1.5 rounded-lg bg-[#303038] hover:bg-[#3d3d48] disabled:opacity-30 disabled:hover:bg-[#303038] text-slate-200 cursor-pointer"
+            className="min-w-[40px] min-h-[40px] sm:min-w-[32px] sm:min-h-[32px] p-1.5 rounded-lg bg-[#303038] hover:bg-[#3d3d48] disabled:opacity-30 disabled:hover:bg-[#303038] text-slate-200 cursor-pointer flex items-center justify-center"
             title="Next Page"
+            aria-label="Next Page"
           >
-            <ChevronRight className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+            <ChevronRight className="w-4 h-4" />
           </button>
         </div>
 
@@ -379,32 +383,38 @@ export const PdfCanvasViewer: React.FC<Props> = ({
         <div className="flex items-center gap-1.5 sm:gap-2">
           <div className="flex items-center gap-0.5 sm:gap-1 bg-[#161619] p-0.5 sm:p-1 rounded-lg border border-[#3b3b45]">
             <button
+              type="button"
               onClick={() => setScale(s => Math.max(0.5, s - 0.15))}
-              className="p-1 text-slate-400 hover:text-white rounded hover:bg-[#282830]"
+              className="min-w-[36px] min-h-[36px] sm:min-w-0 sm:min-h-0 p-1.5 text-slate-400 hover:text-white rounded hover:bg-[#282830] flex items-center justify-center cursor-pointer"
               title="Zoom Out"
+              aria-label="Zoom Out"
             >
               <ZoomOut className="w-3.5 h-3.5" />
             </button>
             <button
+              type="button"
               onClick={() => setScale(1.0)}
-              className="text-[10px] sm:text-[11px] font-mono text-amber-400 px-1 font-bold min-w-[36px] sm:min-w-[42px] text-center hover:bg-[#282830] rounded"
+              className="text-[11px] font-mono text-amber-400 px-1.5 font-bold min-w-[40px] text-center hover:bg-[#282830] rounded tabular-nums cursor-pointer"
               title="Reset Zoom"
             >
               {Math.round(scale * 100)}%
             </button>
             <button
+              type="button"
               onClick={() => setScale(s => Math.min(2.5, s + 0.15))}
-              className="p-1 text-slate-400 hover:text-white rounded hover:bg-[#282830]"
+              className="min-w-[36px] min-h-[36px] sm:min-w-0 sm:min-h-0 p-1.5 text-slate-400 hover:text-white rounded hover:bg-[#282830] flex items-center justify-center cursor-pointer"
               title="Zoom In"
+              aria-label="Zoom In"
             >
               <ZoomIn className="w-3.5 h-3.5" />
             </button>
           </div>
 
-          <div className="flex bg-[#161619] p-0.5 sm:p-1 rounded-lg border border-[#3b3b45] text-[10px] sm:text-[11px]">
+          <div className="flex bg-[#161619] p-0.5 sm:p-1 rounded-lg border border-[#3b3b45] text-[11px]">
             <button
+              type="button"
               onClick={() => setRenderMode("single")}
-              className={`px-2 py-1 rounded font-bold transition-all ${
+              className={`min-h-[34px] sm:min-h-0 px-2.5 py-1 rounded font-bold transition-all cursor-pointer ${
                 renderMode === "single"
                   ? "bg-amber-500 text-slate-950 shadow-xs"
                   : "text-slate-400 hover:text-white"
@@ -413,8 +423,9 @@ export const PdfCanvasViewer: React.FC<Props> = ({
               Page
             </button>
             <button
+              type="button"
               onClick={() => setRenderMode("continuous")}
-              className={`px-2 py-1 rounded font-bold transition-all ${
+              className={`min-h-[34px] sm:min-h-0 px-2.5 py-1 rounded font-bold transition-all cursor-pointer ${
                 renderMode === "continuous"
                   ? "bg-amber-500 text-slate-950 shadow-xs"
                   : "text-slate-400 hover:text-white"
@@ -432,28 +443,28 @@ export const PdfCanvasViewer: React.FC<Props> = ({
         onWheel={handleWheel}
         onScroll={handleScroll}
         tabIndex={0}
-        className="flex-1 overflow-y-auto overflow-x-auto bg-[#e5e7eb] dark:bg-[#1f1f23] p-3 sm:p-6 md:p-8 flex flex-col items-center relative w-full h-full outline-none focus:outline-none"
+        className="flex-1 overflow-y-auto overflow-x-auto bg-[#e5e7eb] dark:bg-[#1f1f23] p-1.5 sm:p-6 md:p-8 flex flex-col items-center relative w-full h-full outline-none focus:outline-none"
       >
         {viewNative && !isLoading && !error ? (
           <div className="w-full h-full flex flex-col bg-white shadow-2xl rounded-lg overflow-hidden border border-slate-300">
-            <div className="h-11 bg-[#18181b] border-b border-[#33333d] flex items-center justify-between px-4 text-xs text-slate-200 shrink-0">
-              <span className="font-bold flex items-center gap-2 text-amber-400">
-                <span className="w-2.5 h-2.5 rounded-full bg-amber-500 animate-pulse" />
-                Untouched Original Document Viewer ({documentTitle})
+            <div className="min-h-11 bg-[#18181b] border-b border-[#33333d] flex items-center justify-between px-3 sm:px-4 py-1.5 text-xs text-slate-200 shrink-0 gap-2">
+              <span className="font-bold text-amber-400 truncate">
+                {documentTitle}
               </span>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 shrink-0">
                 <a
                   href={sourceUrl || `/api/pdf/doc`}
                   download={`${documentTitle}.pdf`}
                   className="px-3 py-1.5 rounded bg-slate-800 hover:bg-slate-700 text-slate-200 font-semibold text-xs"
                 >
-                  Download Original File
+                  Download
                 </a>
                 <button
+                  type="button"
                   onClick={() => setViewNative(false)}
                   className="px-3 py-1.5 rounded bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs cursor-pointer"
                 >
-                  Switch to Canvas View
+                  Canvas View
                 </button>
               </div>
             </div>
@@ -470,7 +481,7 @@ export const PdfCanvasViewer: React.FC<Props> = ({
         {isLoading && (
           <div className="my-auto flex flex-col items-center justify-center space-y-3 p-6 sm:p-8 text-center bg-white/80 dark:bg-[#202025]/80 backdrop-blur-md rounded-2xl shadow-xl border border-slate-300 dark:border-slate-700 max-w-sm">
             <RefreshCw className="w-8 h-8 text-amber-500 animate-spin" />
-            <div className="text-sm font-bold text-slate-900 dark:text-white">Rendering Original High-Resolution PDF...</div>
+            <div className="text-sm font-bold text-slate-900 dark:text-white">Rendering High-Resolution PDF...</div>
             <p className="text-xs text-slate-600 dark:text-slate-400">
               Processing vector graphics, slides, code blocks, and diagrams.
             </p>
@@ -487,7 +498,7 @@ export const PdfCanvasViewer: React.FC<Props> = ({
                 href={sourceUrl}
                 target="_blank"
                 rel="noreferrer"
-                className="px-4 py-2 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold rounded-lg text-xs flex items-center gap-2"
+                className="px-4 py-2.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold rounded-lg text-xs flex items-center gap-2 min-h-[44px]"
               >
                 <ExternalLink className="w-4 h-4" /> Open Original File
               </a>
@@ -496,43 +507,39 @@ export const PdfCanvasViewer: React.FC<Props> = ({
         )}
 
         {!isLoading && !error && renderMode === "single" && (
-          <div className="w-full flex-1 min-h-full flex flex-col items-center justify-start py-4 sm:py-6 px-1 sm:px-4 max-w-full">
+          <div className="w-full flex-1 min-h-full flex flex-col items-center justify-start py-2 sm:py-6 pb-24 sm:pb-8 px-0.5 sm:px-4 max-w-full">
             {pdfDoc ? (
               <div className="bg-white shadow-2xl rounded-xs overflow-hidden border border-slate-300 transition-transform max-w-full">
                 <canvas ref={singleCanvasRef} className="block max-w-full h-auto mx-auto" />
               </div>
             ) : fallbackSlideImages?.[activePage - 1] && !failedImages.has(activePage) ? (
-              <div className="bg-white shadow-2xl rounded-xs overflow-hidden border border-slate-300 transition-transform max-w-full p-2">
+              <div className="bg-white shadow-2xl rounded-xs overflow-hidden border border-slate-300 transition-transform max-w-full p-1 sm:p-2">
                 <img
                   src={fallbackSlideImages[activePage - 1]}
                   alt={`Slide ${activePage}`}
                   onError={() => setFailedImages(prev => new Set(prev).add(activePage))}
-                  style={{ transform: `scale(${scale})`, transformOrigin: "top center" }}
                   className="max-w-full h-auto block mx-auto rounded"
                 />
               </div>
             ) : fallbackSections && fallbackSections[activePage - 1] ? (
-              <div 
-                className="bg-white shadow-2xl rounded-xl overflow-hidden border border-slate-300 transition-transform max-w-full p-2 sm:p-4"
-                style={{ transform: `scale(${scale})`, transformOrigin: "top center" }}
-              >
-                <div className="w-full sm:w-[960px] max-w-full aspect-[16/9] bg-white text-slate-900 rounded-xl p-8 sm:p-12 relative overflow-hidden font-sans flex flex-col justify-between shadow-xl border border-slate-200">
-                  <div className="absolute top-0 left-0 right-0 h-1.5 bg-amber-500" />
+              <div className="bg-white shadow-2xl rounded-xl overflow-hidden border border-slate-300 max-w-full w-full sm:w-auto p-1.5 sm:p-4">
+                <div className="w-full sm:w-[960px] max-w-full min-h-[280px] sm:aspect-[16/9] bg-white text-slate-900 rounded-xl p-4 sm:p-10 relative font-sans flex flex-col justify-between shadow-xl border border-slate-200">
+                  <div className="absolute top-0 left-0 right-0 h-1.5 bg-amber-500 rounded-t-xl" />
                   <div className="relative z-10">
-                    <div className="text-amber-600 font-extrabold uppercase tracking-widest text-xs sm:text-sm mb-2">
+                    <div className="text-amber-600 font-extrabold uppercase tracking-widest text-[11px] sm:text-sm mb-2">
                       {fallbackSections[activePage - 1]?.subtitle || shortTitle || `SLIDE ${activePage}`}
                     </div>
-                    <h1 className="text-2xl sm:text-3xl md:text-4xl font-extrabold text-slate-900 tracking-tight leading-tight mb-4">
+                    <h1 className="text-xl sm:text-3xl md:text-4xl font-extrabold text-slate-900 tracking-tight leading-tight mb-3 sm:mb-4">
                       {fallbackSections[activePage - 1]?.title || `Slide ${activePage}`}
                     </h1>
-                    <div className="w-full h-0.5 bg-slate-200 my-4" />
-                    <div className="text-slate-700 text-xs sm:text-sm leading-relaxed mb-6 font-normal">
+                    <div className="w-full h-0.5 bg-slate-200 my-3 sm:my-4" />
+                    <div className="text-slate-700 leading-relaxed mb-4 sm:mb-6 font-normal">
                       <PaperMarkdownRenderer content={fallbackSections[activePage - 1]?.contentMarkdown || ""} isDark={false} />
                     </div>
                   </div>
-                  <div className="pt-3 border-t border-slate-200 flex items-center justify-between text-xs text-slate-500 font-mono relative z-10">
+                  <div className="pt-3 border-t border-slate-200 flex items-center justify-between text-xs text-slate-500 font-mono relative z-10 tabular-nums">
                     <span className="truncate pr-2">{documentTitle || `Slide ${activePage}`}</span>
-                    <span className="font-bold text-slate-700">Slide {activePage} of {numPages}</span>
+                    <span className="font-bold text-slate-700 shrink-0">Slide {activePage} of {numPages}</span>
                   </div>
                 </div>
               </div>
@@ -541,7 +548,7 @@ export const PdfCanvasViewer: React.FC<Props> = ({
         )}
 
         {!isLoading && !error && renderMode === "continuous" && (
-          <div className="w-full flex flex-col items-center space-y-6 sm:space-y-10 my-2 pb-24 max-w-full">
+          <div className="w-full flex flex-col items-center space-y-4 sm:space-y-10 my-1 sm:my-2 pb-24 max-w-full">
             {pdfDoc ? (
               Array.from({ length: numPages }, (_, i) => i + 1).map((pageNum) => (
                 <div key={pageNum} id={`doc-page-${pageNum}`} className="flex flex-col items-center scroll-mt-4 max-w-full">
@@ -564,9 +571,9 @@ export const PdfCanvasViewer: React.FC<Props> = ({
                 const pageNum = idx + 1;
                 const slideImg = fallbackSlideImages?.[idx];
                 return (
-                  <div key={pageNum} id={`doc-page-${pageNum}`} className="flex flex-col items-center scroll-mt-6 max-w-full">
+                  <div key={pageNum} id={`doc-page-${pageNum}`} className="flex flex-col items-center scroll-mt-6 max-w-full w-full sm:w-auto">
                     {slideImg && !failedImages.has(pageNum) ? (
-                      <div className="bg-white shadow-2xl rounded-xs overflow-hidden border border-slate-300 p-2 max-w-full">
+                      <div className="bg-white shadow-2xl rounded-xs overflow-hidden border border-slate-300 p-1 sm:p-2 max-w-full">
                         <img 
                           src={slideImg} 
                           alt={`Slide ${pageNum}`} 
@@ -575,24 +582,24 @@ export const PdfCanvasViewer: React.FC<Props> = ({
                         />
                       </div>
                     ) : (
-                      <div className="bg-white shadow-2xl rounded-xl overflow-hidden border border-slate-300 p-2 sm:p-4 max-w-full">
-                        <div className="w-full sm:w-[960px] max-w-full aspect-[16/9] bg-white text-slate-900 rounded-xl p-8 sm:p-12 relative overflow-hidden font-sans flex flex-col justify-between shadow-xl border border-slate-200">
-                          <div className="absolute top-0 left-0 right-0 h-1.5 bg-amber-500" />
+                      <div className="bg-white shadow-2xl rounded-xl overflow-hidden border border-slate-300 p-1.5 sm:p-4 max-w-full w-full sm:w-auto">
+                        <div className="w-full sm:w-[960px] max-w-full min-h-[260px] sm:aspect-[16/9] bg-white text-slate-900 rounded-xl p-4 sm:p-10 relative font-sans flex flex-col justify-between shadow-xl border border-slate-200">
+                          <div className="absolute top-0 left-0 right-0 h-1.5 bg-amber-500 rounded-t-xl" />
                           <div className="relative z-10">
-                            <div className="text-amber-600 font-extrabold uppercase tracking-widest text-xs sm:text-sm mb-2">
+                            <div className="text-amber-600 font-extrabold uppercase tracking-widest text-[11px] sm:text-sm mb-2">
                               {sec.subtitle || `SLIDE ${pageNum} OF ${numPages}`}
                             </div>
-                            <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-900 mb-4">
+                            <h2 className="text-xl sm:text-3xl font-extrabold text-slate-900 mb-3 sm:mb-4">
                               {sec.title || `Slide ${pageNum}`}
                             </h2>
-                            <div className="w-full h-0.5 bg-slate-200 my-4" />
-                            <div className="text-slate-700 text-xs sm:text-sm leading-relaxed mb-6">
+                            <div className="w-full h-0.5 bg-slate-200 my-3 sm:my-4" />
+                            <div className="text-slate-700 leading-relaxed mb-4 sm:mb-6">
                               <PaperMarkdownRenderer content={sec.contentMarkdown || ""} isDark={false} />
                             </div>
                           </div>
-                          <div className="pt-3 border-t border-slate-200 flex items-center justify-between text-xs text-slate-500 font-mono">
+                          <div className="pt-3 border-t border-slate-200 flex items-center justify-between text-xs text-slate-500 font-mono tabular-nums">
                             <span className="truncate pr-2">{documentTitle}</span>
-                            <span className="font-bold text-slate-700">Slide {pageNum} of {numPages}</span>
+                            <span className="font-bold text-slate-700 shrink-0">Slide {pageNum} of {numPages}</span>
                           </div>
                         </div>
                       </div>
@@ -607,9 +614,9 @@ export const PdfCanvasViewer: React.FC<Props> = ({
           </>
         )}
 
-        {/* Floating Page Badge Overlay Bottom Left (Matching Screenshot) */}
+        {/* Floating Page Badge Overlay Bottom Left */}
         {!isLoading && !error && (
-          <div className="hidden sm:flex fixed bottom-6 left-6 z-30 items-center gap-2 bg-white/95 dark:bg-[#202025]/95 backdrop-blur-md px-3.5 py-1.5 rounded-lg border border-slate-300 dark:border-[#383842] shadow-xl text-xs font-mono font-bold text-slate-800 dark:text-slate-100">
+          <div className="hidden sm:flex fixed bottom-6 left-6 z-30 items-center gap-2 bg-white/95 dark:bg-[#202025]/95 backdrop-blur-md px-3.5 py-1.5 rounded-lg border border-slate-300 dark:border-[#383842] shadow-xl text-xs font-mono font-bold text-slate-800 dark:text-slate-100 tabular-nums">
             <span className="px-2 py-0.5 rounded bg-slate-100 dark:bg-[#121215] border border-slate-300 dark:border-[#3a3a42] font-extrabold text-slate-900 dark:text-white">
               {activePage}
             </span>

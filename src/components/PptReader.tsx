@@ -436,7 +436,7 @@ export const PptReader: React.FC<PptReaderProps> = ({
         )}
 
         {/* Center Presentation Stage */}
-        <main className="flex-1 overflow-auto flex flex-col items-center justify-start p-6 sm:p-12 pb-24 relative bg-[#e2e5eb] dark:bg-[#0c0d12]">
+        <main className="flex-1 overflow-auto flex flex-col items-center justify-start p-2.5 sm:p-10 pb-24 relative bg-[#e2e5eb] dark:bg-[#0c0d12]">
           {/* Laser Pointer in Presentation Mode */}
           {isLaserActive && isFullscreen && (
             <div
@@ -449,7 +449,7 @@ export const PptReader: React.FC<PptReaderProps> = ({
           <button
             onClick={goToPrevSlide}
             disabled={currentSlide <= 1}
-            className="absolute left-3 top-1/2 -translate-y-1/2 z-30 p-2 sm:p-3 rounded-full bg-black/60 hover:bg-black/90 text-white disabled:opacity-0 transition-all opacity-0 hover:opacity-100 focus:opacity-100 shadow-2xl border border-white/20 cursor-pointer backdrop-blur-xs"
+            className="hidden sm:flex absolute left-3 top-1/2 -translate-y-1/2 z-30 p-3 rounded-full bg-black/60 hover:bg-black/90 text-white disabled:opacity-0 transition-all opacity-0 hover:opacity-100 focus:opacity-100 shadow-2xl border border-white/20 cursor-pointer backdrop-blur-xs"
             title="Previous Slide"
           >
             <ChevronLeft className="w-6 h-6" />
@@ -458,24 +458,24 @@ export const PptReader: React.FC<PptReaderProps> = ({
           <button
             onClick={goToNextSlide}
             disabled={currentSlide >= totalSlides}
-            className="absolute right-3 top-1/2 -translate-y-1/2 z-30 p-2 sm:p-3 rounded-full bg-black/60 hover:bg-black/90 text-white disabled:opacity-0 transition-all opacity-0 hover:opacity-100 focus:opacity-100 shadow-2xl border border-white/20 cursor-pointer backdrop-blur-xs"
+            className="hidden sm:flex absolute right-3 top-1/2 -translate-y-1/2 z-30 p-3 rounded-full bg-black/60 hover:bg-black/90 text-white disabled:opacity-0 transition-all opacity-0 hover:opacity-100 focus:opacity-100 shadow-2xl border border-white/20 cursor-pointer backdrop-blur-xs"
             title="Next Slide"
           >
             <ChevronRight className="w-6 h-6" />
           </button>
 
           {/* The Slide Canvas */}
-          <div className="flex flex-col items-center gap-5 sm:gap-10 w-full max-w-[1360px] mx-auto py-4 sm:py-12 px-2.5 sm:px-4">
+          <div className="flex flex-col items-center gap-4 sm:gap-10 w-full max-w-[1360px] mx-auto py-2 sm:py-10 px-1 sm:px-4">
             {Array.from({ length: totalSlides }, (_, idx) => {
               const slideNum = idx + 1;
               const slideImg = doc.slideImages?.[idx] || `/api/slide/${doc.id}/${slideNum}`;
-              const slideSec = sections[idx] || { title: `Slide ${slideNum}`, contentMarkdown: doc.description || "AWS Cloud Architecture and Module Specifications." };
+              const slideSec = sections[idx] || { title: `Slide ${slideNum}`, contentMarkdown: doc.description || "Lecture notes & study material." };
               const hasFailed = failedImages.has(slideNum);
               return (
                 <div
                   key={slideNum}
                   id={`ppt-slide-${slideNum}`}
-                  className="w-full aspect-[16/9] transition-transform duration-150 ease-out flex items-center justify-center relative shadow-2xl rounded-2xl bg-[#0f1117] text-slate-100 border border-slate-700/40 shrink-0 overflow-hidden"
+                  className={`w-full ${!hasFailed ? "aspect-[16/9]" : "min-h-[260px] sm:aspect-[16/9]"} transition-transform duration-150 ease-out flex items-center justify-center relative shadow-2xl rounded-2xl bg-[#0f1117] text-slate-100 border border-slate-700/40 shrink-0 overflow-hidden`}
                   style={{
                     transform: `scale(${zoom / 100})`,
                     transformOrigin: "center center",
@@ -490,12 +490,12 @@ export const PptReader: React.FC<PptReaderProps> = ({
                       onError={() => setFailedImages((prev) => new Set(prev).add(slideNum))}
                     />
                   ) : (
-                    <div className="w-full h-full p-8 sm:p-12 flex flex-col justify-between bg-gradient-to-br from-slate-900 via-[#151821] to-[#0f1117] text-slate-100 rounded-2xl select-text overflow-y-auto">
-                      <div className="space-y-3">
-                        <div className="text-xs font-mono font-bold text-amber-400 uppercase tracking-widest">
-                          {doc.shortTitle || doc.title} • Slide {slideNum} of {totalSlides}
+                    <div className="w-full h-full p-4 sm:p-10 flex flex-col justify-between bg-gradient-to-br from-slate-900 via-[#151821] to-[#0f1117] text-slate-100 rounded-2xl select-text overflow-y-auto">
+                      <div className="space-y-2.5">
+                        <div className="text-[11px] font-mono font-bold text-amber-400 uppercase tracking-widest tabular-nums">
+                          {doc.shortTitle || doc.title} · Slide {slideNum} of {totalSlides}
                         </div>
-                        <h2 className="text-xl sm:text-2xl font-black tracking-tight text-white">
+                        <h2 className="text-lg sm:text-2xl font-black tracking-tight text-white">
                           {slideSec.title || `Slide ${slideNum}`}
                         </h2>
                         {slideSec.subtitle && (
@@ -504,12 +504,15 @@ export const PptReader: React.FC<PptReaderProps> = ({
                           </p>
                         )}
                       </div>
-                      <div className="my-4 text-xs sm:text-sm text-slate-200 leading-relaxed font-sans border-t border-slate-800/80 pt-4">
-                        <PaperMarkdownRenderer content={slideSec.contentMarkdown || slideSec.speakerNotes || "AWS Cloud Architecture and Module Specifications."} />
+                      <div className="my-3 sm:my-4 text-slate-200 leading-relaxed font-sans border-t border-slate-800/80 pt-3 sm:pt-4">
+                        <PaperMarkdownRenderer
+                          content={slideSec.contentMarkdown || slideSec.speakerNotes || "Lecture notes & study material."}
+                          isDark={true}
+                        />
                       </div>
-                      <div className="text-[10px] text-slate-500 flex items-center justify-between border-t border-slate-800 pt-3">
-                        <span>{doc.unit || "AWS Cloud Practitioner"}</span>
-                        <span className="font-mono">Page {slideNum}</span>
+                      <div className="text-[11px] text-slate-400 flex items-center justify-between border-t border-slate-800 pt-3 tabular-nums">
+                        <span className="truncate pr-2">{doc.unit || doc.subject || "Course Notes"}</span>
+                        <span className="font-mono shrink-0">Slide {slideNum}</span>
                       </div>
                     </div>
                   )}
@@ -519,29 +522,33 @@ export const PptReader: React.FC<PptReaderProps> = ({
           </div>
 
           {/* Bottom Floating Control Bar (Slide Pagination & Zoom) */}
-          <div className="fixed bottom-3 sm:bottom-6 left-1/2 -translate-x-1/2 z-40 bg-[#181b24]/95 backdrop-blur-md border border-slate-700/80 text-white rounded-xl px-3 sm:px-4 py-1.5 sm:py-2 flex items-center gap-3 sm:gap-6 shadow-2xl max-w-[calc(100vw-24px)]">
+          <div className="fixed bottom-3 sm:bottom-6 pb-safe left-1/2 -translate-x-1/2 z-40 bg-[#181b24]/95 backdrop-blur-md border border-slate-700/80 text-white rounded-2xl px-2.5 sm:px-4 py-1.5 sm:py-2 flex items-center gap-2 sm:gap-5 shadow-2xl max-w-[calc(100vw-20px)]">
             {/* Slide Switcher */}
-            <div className="flex items-center bg-slate-900/90 border border-slate-700/80 rounded-lg p-0.5 shadow-inner">
+            <div className="flex items-center bg-slate-900/90 border border-slate-700/80 rounded-xl p-0.5 shadow-inner">
               <button
+                type="button"
                 onClick={goToPrevSlide}
                 disabled={currentSlide <= 1}
-                className="p-1.5 rounded-md hover:bg-slate-800 disabled:opacity-30 disabled:hover:bg-transparent text-slate-200 transition-colors cursor-pointer"
+                className="min-w-[40px] min-h-[40px] sm:min-w-0 sm:min-h-0 p-1.5 rounded-lg hover:bg-slate-800 disabled:opacity-30 disabled:hover:bg-transparent text-slate-200 transition-colors cursor-pointer flex items-center justify-center"
                 title="Previous Slide (Left Arrow)"
+                aria-label="Previous Slide"
               >
                 <ChevronLeft className="w-4 h-4" />
               </button>
 
-              <div className="px-3 text-center min-w-[70px] sm:min-w-[90px] font-mono text-xs font-bold text-amber-400">
+              <div className="px-2.5 sm:px-3 text-center min-w-[64px] sm:min-w-[84px] font-mono text-xs font-bold text-amber-400 tabular-nums">
                 <span>{currentSlide}</span>
                 <span className="text-slate-500 font-normal mx-1">/</span>
                 <span className="text-slate-400">{totalSlides}</span>
               </div>
 
               <button
+                type="button"
                 onClick={goToNextSlide}
                 disabled={currentSlide >= totalSlides}
-                className="p-1.5 rounded-md hover:bg-slate-800 disabled:opacity-30 disabled:hover:bg-transparent text-slate-200 transition-colors cursor-pointer"
+                className="min-w-[40px] min-h-[40px] sm:min-w-0 sm:min-h-0 p-1.5 rounded-lg hover:bg-slate-800 disabled:opacity-30 disabled:hover:bg-transparent text-slate-200 transition-colors cursor-pointer flex items-center justify-center"
                 title="Next Slide (Right Arrow or Space)"
+                aria-label="Next Slide"
               >
                 <ChevronRight className="w-4 h-4" />
               </button>
@@ -550,25 +557,30 @@ export const PptReader: React.FC<PptReaderProps> = ({
             <div className="w-px h-5 bg-slate-700" />
 
             {/* Zoom Controls */}
-            <div className="flex items-center bg-slate-900/80 border border-slate-700/80 rounded-lg p-0.5 text-slate-300">
+            <div className="flex items-center bg-slate-900/80 border border-slate-700/80 rounded-xl p-0.5 text-slate-300">
               <button
+                type="button"
                 onClick={() => setZoom((z) => Math.max(50, z - 15))}
-                className="p-1.5 hover:text-white hover:bg-slate-800 rounded"
+                className="min-w-[38px] min-h-[38px] sm:min-w-0 sm:min-h-0 p-1.5 hover:text-white hover:bg-slate-800 rounded-lg flex items-center justify-center cursor-pointer"
                 title="Zoom Out"
+                aria-label="Zoom Out"
               >
                 <ZoomOut className="w-3.5 h-3.5" />
               </button>
               <button
+                type="button"
                 onClick={() => setZoom(100)}
-                className="px-2 text-xs font-mono font-bold text-amber-400 hover:bg-slate-800 rounded min-w-[42px] text-center"
+                className="px-1.5 sm:px-2 text-xs font-mono font-bold text-amber-400 hover:bg-slate-800 rounded min-w-[40px] text-center tabular-nums cursor-pointer"
                 title="Reset Zoom"
               >
                 {zoom}%
               </button>
               <button
+                type="button"
                 onClick={() => setZoom((z) => Math.min(200, z + 15))}
-                className="p-1.5 hover:text-white hover:bg-slate-800 rounded"
+                className="min-w-[38px] min-h-[38px] sm:min-w-0 sm:min-h-0 p-1.5 hover:text-white hover:bg-slate-800 rounded-lg flex items-center justify-center cursor-pointer"
                 title="Zoom In"
+                aria-label="Zoom In"
               >
                 <ZoomIn className="w-3.5 h-3.5" />
               </button>

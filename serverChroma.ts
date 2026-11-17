@@ -1,11 +1,18 @@
 import { CloudClient, EmbeddingFunction } from "chromadb";
 import { NoteDocument, CourseAnnouncement } from "./src/types";
 
+const cleanEnv = (val: string | undefined, fallback: string): string =>
+  (val || fallback).trim().replace(/^["']+|["']+$/g, "").trim() || fallback;
+
+const DEFAULT_CHROMA_API_KEY = "ck-GcQZtcjL4HkCUrRnhdhvLC632JVA9YXHYw7PVoDWj8AM";
+const DEFAULT_CHROMA_TENANT = "0f94ea0f-37ba-4909-88f1-4ee0f0e15dd7";
+const DEFAULT_CHROMA_DATABASE = "rag-notes-application1";
+
 // ChromaDB Cloud configuration with fallback to provided credentials
-const CHROMA_API_KEY = (process.env.CHROMA_API_KEY || "ck-GcQZtcjL4HkCUrRnhdhvLC632JVA9YXHYw7PVoDWj8AM").trim();
-const CHROMA_TENANT = (process.env.CHROMA_TENANT || "0f94ea0f-37ba-4909-88f1-4ee0f0e15dd7").trim();
-const CHROMA_DATABASE = (process.env.CHROMA_DATABASE || "rag-notes-application1").trim();
-const COLLECTION_NAME = (process.env.CHROMA_COLLECTION || "student_notes").trim() || "student_notes";
+const CHROMA_API_KEY = cleanEnv(process.env.CHROMA_API_KEY, DEFAULT_CHROMA_API_KEY);
+const CHROMA_TENANT = cleanEnv(process.env.CHROMA_TENANT, DEFAULT_CHROMA_TENANT);
+const CHROMA_DATABASE = cleanEnv(process.env.CHROMA_DATABASE, DEFAULT_CHROMA_DATABASE);
+const COLLECTION_NAME = cleanEnv(process.env.CHROMA_COLLECTION, "student_notes");
 
 /**
  * Robust, zero-dependency 384-dimensional dense semantic vector generator.
@@ -114,6 +121,31 @@ export function getChromaConfig() {
   };
 }
 
+async function connectCollectionWithClient(client: any) {
+  if (!embeddingFunction) {
+    embeddingFunction = new RobustEmbeddingFunction();
+  }
+  try {
+    return await client.getCollection({
+      name: COLLECTION_NAME,
+      embeddingFunction: embeddingFunction
+    });
+  } catch (getErr: any) {
+    const msg = String(getErr?.message || getErr || "");
+    if (/unauthorized|401|forbidden|403/i.test(msg)) {
+      throw getErr;
+    }
+    return await client.getOrCreateCollection({
+      name: COLLECTION_NAME,
+      embeddingFunction: embeddingFunction,
+      metadata: {
+        description: "Vector database for Student Notes Hub RAG & course materials",
+        createdAt: new Date().toISOString()
+      }
+    });
+  }
+}
+
 export async function initChroma(): Promise<boolean> {
   if (isInitialized && activeCollection) return true;
 
@@ -126,33 +158,35 @@ export async function initChroma(): Promise<boolean> {
       });
     }
 
-    if (!embeddingFunction) {
-      embeddingFunction = new RobustEmbeddingFunction();
-    }
-
-    // Attempt to get existing collection first to prevent collection creation quota limits
-    try {
-      activeCollection = await chromaClient.getCollection({
-        name: COLLECTION_NAME,
-        embeddingFunction: embeddingFunction
-      });
-    } catch {
-      activeCollection = await chromaClient.getOrCreateCollection({
-        name: COLLECTION_NAME,
-        embeddingFunction: embeddingFunction,
-        metadata: {
-          description: "Vector database for Student Notes Hub RAG & course materials",
-          createdAt: new Date().toISOString()
-        }
-      });
-    }
+    activeCollection = await connectCollectionWithClient(chromaClient);
 
     isInitialized = true;
     initError = null;
     console.log(`[ChromaDB Cloud] Successfully connected to database "${CHROMA_DATABASE}" (Collection: ${COLLECTION_NAME})`);
     return true;
   } catch (err: any) {
-    initError = err?.message || String(err);
+    const msg = err?.message || String(err);
+    if (/unauthorized|401/i.test(msg) && CHROMA_API_KEY !== DEFAULT_CHROMA_API_KEY) {
+      try {
+        console.warn("[ChromaDB Cloud] Overridden CHROMA_API_KEY returned Unauthorized; retrying with default key...");
+        chromaClient = new CloudClient({
+          apiKey: DEFAULT_CHROMA_API_KEY,
+          tenant: DEFAULT_CHROMA_TENANT,
+          database: DEFAULT_CHROMA_DATABASE
+        });
+        activeCollection = await connectCollectionWithClient(chromaClient);
+        isInitialized = true;
+        initError = null;
+        console.log(`[ChromaDB Cloud] Connected via fallback key to "${DEFAULT_CHROMA_DATABASE}" (Collection: ${COLLECTION_NAME})`);
+        return true;
+      } catch (fallbackErr: any) {
+        initError = fallbackErr?.message || String(fallbackErr);
+      }
+    } else {
+      initError = msg;
+    }
+    chromaClient = null;
+    activeCollection = null;
     console.warn(`[ChromaDB Cloud] Warning during initialization:`, initError);
     return false;
   }

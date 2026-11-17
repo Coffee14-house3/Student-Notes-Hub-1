@@ -203,6 +203,14 @@ export const StudentApp: React.FC<Props> = ({ isStandalone = true, onSwitchPorta
     };
   });
 
+  useEffect(() => {
+    try {
+      localStorage.setItem("aws_notes_reading_settings", JSON.stringify(readingSettings));
+    } catch {
+      // ignore
+    }
+  }, [readingSettings]);
+
   // User bookmarks
   const [bookmarks, setBookmarks] = useState<UserBookmark[]>(() => {
     try {
@@ -214,7 +222,15 @@ export const StudentApp: React.FC<Props> = ({ isStandalone = true, onSwitchPorta
     return [];
   });
 
-  const handleToggleBookmark = (noteId: string, sectionId: string, sectionTitle: string, pageNumber: number) => {
+  useEffect(() => {
+    try {
+      localStorage.setItem("aws_notes_user_bookmarks", JSON.stringify(bookmarks));
+    } catch {
+      // ignore
+    }
+  }, [bookmarks]);
+
+  const handleToggleBookmark = (noteId: string, sectionId: string, sectionTitle: string, _pageNumber: number) => {
     setBookmarks(prev => {
       const exists = prev.some(b => b.noteId === noteId && b.sectionId === sectionId);
       if (exists) {
@@ -349,15 +365,24 @@ export const StudentApp: React.FC<Props> = ({ isStandalone = true, onSwitchPorta
             readingSettings={readingSettings}
             onUpdateSettings={setReadingSettings}
             bookmarks={bookmarks}
-            onToggleBookmark={handleToggleBookmark}
+            onToggleBookmark={(section, snippet) => {
+              handleToggleBookmark(
+                currentDocument?.id || activeView,
+                section.id,
+                section.title || snippet,
+                section.pageNumber || 1
+              );
+            }}
+            onRemoveBookmark={(id) => {
+              setBookmarks(prev => prev.filter(b => b.id !== id));
+            }}
+            onOpenSearch={() => setSearchOpen(true)}
             isAiChatOpen={aiChatOpen}
             onOpenAiChat={() => setAiChatOpen(true)}
             onCloseAiChat={() => setAiChatOpen(false)}
             onToggleAiChat={() => setAiChatOpen(prev => !prev)}
-            onOpenQuiz={() => {
-              if (currentDocument) {
-                setQuizTargetDocId(currentDocument.id);
-              }
+            onOpenQuiz={(targetId) => {
+              setQuizTargetDocId(targetId || currentDocument?.id);
               setQuizModalOpen(true);
             }}
             onOpenExport={() => setExportModalOpen(true)}

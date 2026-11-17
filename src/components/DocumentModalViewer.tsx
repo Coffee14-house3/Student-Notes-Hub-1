@@ -14,7 +14,7 @@ import { AiAssistantModal } from "./AiAssistantModal";
 import { FlashcardsQuiz } from "./FlashcardsQuiz";
 import { FigureCard } from "./FigureCard";
 import { PdfCanvasViewer } from "./PdfCanvasViewer";
-import { PaperMarkdownRenderer } from "./PaperMarkdownRenderer";
+import { PaperMarkdownRenderer, ReaderFontSize } from "./PaperMarkdownRenderer";
 import { DocumentSummaryModal } from "./DocumentSummaryModal";
 import { DocumentRenameModal } from "./DocumentRenameModal";
 import { DocumentDetailsModal } from "./DocumentDetailsModal";
@@ -240,14 +240,32 @@ export const DocumentModalViewer: React.FC<Props> = ({
     darkMode: true
   };
 
+  const [localFontSize, setLocalFontSize] = useState<ReaderFontSize>(settings.fontSize || "medium");
+  useEffect(() => {
+    if (settings.fontSize) setLocalFontSize(settings.fontSize);
+  }, [settings.fontSize]);
+
+  const cycleFontSize = () => {
+    const order: ReaderFontSize[] = ["small", "medium", "large", "xlarge"];
+    const idx = order.indexOf(localFontSize);
+    const nextSize = order[(idx + 1) % order.length];
+    setLocalFontSize(nextSize);
+    const nextSettings = { ...settings, fontSize: nextSize };
+    if (onUpdateSettings) onUpdateSettings(nextSettings);
+    if (propsSetSettings) propsSetSettings(nextSettings);
+  };
+
   const bookmarks = propsBookmarks;
   const [currentPage, setCurrentPage] = useState<number>(1);
   const [zoomLevel, setZoomLevel] = useState<number>(100);
-  const [showThumbnails, setShowThumbnails] = useState<boolean>(true);
+  const [showThumbnails, setShowThumbnails] = useState<boolean>(() =>
+    typeof window !== "undefined" ? window.innerWidth >= 768 : true
+  );
   const [showQuizModal, setShowQuizModal] = useState<boolean>(false);
   const [isContinuousScroll, setIsContinuousScroll] = useState<boolean>(true);
   const [copiedCodeKey, setCopiedCodeKey] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<"pdf" | "notes" | "split" | "ppt" | "drive-sandbox">("pdf");
+  const [driveViewMode, setDriveViewMode] = useState<"embed" | "notes">("embed");
   const [showFileActionsMenu, setShowFileActionsMenu] = useState<boolean>(false);
   const [showSummaryModal, setShowSummaryModal] = useState<boolean>(false);
   const [showRenameModal, setShowRenameModal] = useState<boolean>(false);
@@ -516,7 +534,17 @@ export const DocumentModalViewer: React.FC<Props> = ({
     return undefined;
   }, [activeDoc, isPptxDoc]);
 
-  const [slideDeckTheme, setSlideDeckTheme] = useState<"dark" | "light">("dark");
+  const [slideDeckTheme, setSlideDeckTheme] = useState<"dark" | "light">(
+    settings.darkMode === false ? "light" : "dark"
+  );
+
+  const toggleSlideDeckTheme = () => {
+    const next = slideDeckTheme === "dark" ? "light" : "dark";
+    setSlideDeckTheme(next);
+    const nextSettings = { ...settings, darkMode: next === "dark" };
+    if (onUpdateSettings) onUpdateSettings(nextSettings);
+    if (propsSetSettings) propsSetSettings(nextSettings);
+  };
 
   const driveEmbedUrl = useMemo(() => {
     return getDriveEmbedUrl(
@@ -535,6 +563,7 @@ export const DocumentModalViewer: React.FC<Props> = ({
   );
 
   useEffect(() => {
+    setDriveViewMode("embed");
     if (isPptxDoc) {
       setViewMode("ppt");
     } else if (activeDoc?.pdfUrl || activeDoc?.pdfDataUrl) {
@@ -803,14 +832,16 @@ export const DocumentModalViewer: React.FC<Props> = ({
             );
           })}
 
-          <button
-            type="button"
-            onClick={() => fileInputRef.current?.click()}
-            className="p-1.5 text-slate-400 hover:text-amber-400 hover:bg-[#28282c] rounded-md transition-colors shrink-0 ml-1 cursor-pointer"
-            title="Open / Add Document"
-          >
-            <Plus className="w-4 h-4" />
-          </button>
+          {onUploadDocument && (
+            <button
+              type="button"
+              onClick={() => fileInputRef.current?.click()}
+              className="p-1.5 text-slate-400 hover:text-amber-400 hover:bg-[#28282c] rounded-md transition-colors shrink-0 ml-1 cursor-pointer"
+              title="Open / Add Document"
+            >
+              <Plus className="w-4 h-4" />
+            </button>
+          )}
         </div>
 
         {/* Right Corner: Close File / Exit Viewer button pinned to right edge of tab bar (desktop/tablet; mobile uses main bar) */}
@@ -907,8 +938,53 @@ export const DocumentModalViewer: React.FC<Props> = ({
         </div>
 
 
-        {/* Right Tools: Ask AI & Close Button */}
+        {/* Right Tools: Reader Comfort, Ask AI & Close Button */}
         <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
+          {isGoogleDriveDoc && driveEmbedUrl && activeSections.length > 0 && (
+            <div className="hidden sm:flex items-center bg-[#18181b] border border-[#3a3a3c] rounded-lg p-0.5">
+              <button
+                type="button"
+                onClick={() => setDriveViewMode("embed")}
+                className={`px-2.5 py-1 rounded-md text-[11px] font-bold transition-colors cursor-pointer ${
+                  driveViewMode === "embed" ? "bg-amber-500 text-slate-950" : "text-slate-300 hover:text-white"
+                }`}
+              >
+                Slide File
+              </button>
+              <button
+                type="button"
+                onClick={() => setDriveViewMode("notes")}
+                className={`px-2.5 py-1 rounded-md text-[11px] font-bold transition-colors cursor-pointer ${
+                  driveViewMode === "notes" ? "bg-amber-500 text-slate-950" : "text-slate-300 hover:text-white"
+                }`}
+              >
+                Study Notes
+              </button>
+            </div>
+          )}
+
+          {(!isGoogleDriveDoc || driveViewMode === "notes") && (
+            <>
+              <button
+                type="button"
+                onClick={cycleFontSize}
+                className="hidden sm:flex items-center gap-1 min-h-[34px] px-2.5 py-1.5 rounded-lg bg-[#18181b] hover:bg-[#2d2d35] text-slate-200 border border-[#3a3a3c] text-xs font-bold cursor-pointer whitespace-nowrap"
+                title={`Reading font size: ${localFontSize} (click to adjust)`}
+              >
+                <span>A+</span>
+              </button>
+              <button
+                type="button"
+                onClick={toggleSlideDeckTheme}
+                className="hidden sm:flex items-center justify-center min-w-[34px] min-h-[34px] p-1.5 rounded-lg bg-[#18181b] hover:bg-[#2d2d35] text-slate-200 border border-[#3a3a3c] cursor-pointer"
+                title={slideDeckTheme === "dark" ? "Switch to light paper reading mode" : "Switch to dark reading mode"}
+                aria-label="Toggle reading theme"
+              >
+                {slideDeckTheme === "dark" ? <Sun className="w-3.5 h-3.5 text-amber-400" /> : <Moon className="w-3.5 h-3.5 text-amber-400" />}
+              </button>
+            </>
+          )}
+
           {isPptxDoc && (
             <button
               type="button"
@@ -933,11 +1009,10 @@ export const DocumentModalViewer: React.FC<Props> = ({
             </a>
           )}
 
-
           <button
             type="button"
             onClick={handleToggleAiPanel}
-            className={`min-h-[38px] sm:min-h-[34px] flex items-center gap-1 sm:gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-lg text-[11px] sm:text-xs font-extrabold transition-all shadow-md cursor-pointer whitespace-nowrap ${
+            className={`hidden sm:flex min-h-[34px] items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-extrabold transition-all shadow-md cursor-pointer whitespace-nowrap ${
               effectiveAiChatOpen 
                 ? "bg-amber-400 text-slate-950 ring-2 ring-amber-300/60 font-extrabold" 
                 : "bg-amber-500 hover:bg-amber-400 text-slate-950"
@@ -1117,14 +1192,32 @@ export const DocumentModalViewer: React.FC<Props> = ({
         <main 
           ref={pageContainerRef}
           className={`flex-1 min-w-0 h-full ${
-            (viewMode === "pdf" || isPptxDoc || (isGoogleDriveDoc && Boolean(driveEmbedUrl))) ? "overflow-hidden p-0" : "overflow-auto p-2 sm:p-8 flex justify-center items-start"
+            (viewMode === "pdf" || isPptxDoc || (isGoogleDriveDoc && Boolean(driveEmbedUrl) && driveViewMode === "embed"))
+              ? "overflow-hidden p-0 pb-16 sm:pb-0"
+              : "overflow-auto p-2 sm:p-8 pb-24 sm:pb-8 flex justify-center items-start"
           } bg-[#e5e7eb] dark:bg-[#1a1a1e] relative`}
         >
-          {isGoogleDriveDoc && driveEmbedUrl ? (
+          {isGoogleDriveDoc && driveEmbedUrl && driveViewMode === "embed" ? (
             <div className="w-full h-full flex flex-col bg-[#121214] relative overflow-hidden">
+              {(activeDoc?.originalFileUrl || activeDoc?.downloadUrl) && (
+                <div className="px-3 py-1.5 bg-[#1b1b20] border-b border-[#2c2c34] flex items-center justify-between gap-2 text-xs text-slate-300 shrink-0">
+                  <span className="truncate text-[11px] text-slate-400">
+                    Tip: Switch to <strong className="text-amber-400">Study Notes</strong> below for larger mobile reading text.
+                  </span>
+                  <a
+                    href={activeDoc?.originalFileUrl || activeDoc?.downloadUrl}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="inline-flex items-center gap-1 text-amber-400 hover:text-amber-300 font-semibold shrink-0 whitespace-nowrap"
+                  >
+                    <ExternalLink className="w-3.5 h-3.5" />
+                    <span>Open Full</span>
+                  </a>
+                </div>
+              )}
               <iframe
                 src={driveEmbedUrl}
-                className="w-full h-full border-0"
+                className="w-full flex-1 border-0"
                 title={activeDoc?.title || "Course Material"}
                 allow="autoplay; encrypted-media; fullscreen"
                 loading="eager"
@@ -1226,12 +1319,12 @@ export const DocumentModalViewer: React.FC<Props> = ({
             </div>
           ) : (
             <div 
-              className="transition-all duration-150 ease-out my-2 sm:my-4 w-full flex flex-col items-center"
-              style={{ transform: `scale(${zoomLevel / 100})`, transformOrigin: "top center" }}
+              className="transition-all duration-150 ease-out my-1 sm:my-4 w-full flex flex-col items-center"
+              style={zoomLevel !== 100 ? { transform: `scale(${zoomLevel / 100})`, transformOrigin: "top center" } : undefined}
             >
               {isContinuousScroll ? (
                 /* Continuous All Pages Presentation Slide Deck Stack */
-                <div id="doc-page-container" className="flex flex-col items-center gap-8 sm:gap-12 w-full pb-20">
+                <div id="doc-page-container" className="flex flex-col items-center gap-5 sm:gap-12 w-full pb-24 sm:pb-20">
                   {activeSections.map((sec, idx) => {
                     const pageNum = idx + 1;
                     const isBookmarked = bookmarks.some(b => b.sectionId === sec.id);
@@ -1246,6 +1339,7 @@ export const DocumentModalViewer: React.FC<Props> = ({
                         shortTitle={activeDoc ? (activeDoc.shortTitle || activeDoc.title) : "Slide Deck"}
                         isBookmarked={isBookmarked}
                         isDarkMode={slideDeckTheme === "dark"}
+                        fontSize={localFontSize}
                         slideImageUrl={visualSlideImg}
                         onToggleBookmark={() => {
                           if (onToggleBookmark) {
@@ -1271,6 +1365,7 @@ export const DocumentModalViewer: React.FC<Props> = ({
                     shortTitle={activeDoc ? (activeDoc.shortTitle || activeDoc.title) : "Slide Deck"}
                     isBookmarked={bookmarks.some(b => b.sectionId === currentSection.id)}
                     isDarkMode={slideDeckTheme === "dark"}
+                    fontSize={localFontSize}
                     slideImageUrl={currentSection.slideImageUrl || (effectiveSlideImages && effectiveSlideImages[currentPage - 1]) || (activeDoc?.slideImages && activeDoc.slideImages[currentPage - 1]) || (isPptxDoc && activeDoc?.id ? `/api/slide/${activeDoc.id}/${currentPage}` : undefined)}
                     onToggleBookmark={() => {
                       if (onToggleBookmark) {
@@ -1287,9 +1382,9 @@ export const DocumentModalViewer: React.FC<Props> = ({
             </div>
           )}
 
-          {/* Floating Page Badge Overlay Bottom Left */}
-          {activeView !== "quiz" && viewMode !== "pdf" && !isGoogleDriveDoc && (
-            <div className="fixed bottom-3 left-3 sm:bottom-6 sm:left-6 z-30 flex items-center gap-2 bg-white/95 dark:bg-[#202025]/95 backdrop-blur-md px-3 py-1.5 rounded-lg border border-slate-300 dark:border-[#383842] shadow-xl text-xs font-mono font-bold text-slate-800 dark:text-slate-100">
+          {/* Desktop Floating Page Badge Overlay Bottom Left */}
+          {activeView !== "quiz" && viewMode !== "pdf" && (!isGoogleDriveDoc || driveViewMode === "notes") && (
+            <div className="hidden sm:flex fixed bottom-6 left-6 z-30 items-center gap-2 bg-white/95 dark:bg-[#202025]/95 backdrop-blur-md px-3 py-1.5 rounded-lg border border-slate-300 dark:border-[#383842] shadow-xl text-xs font-mono font-bold text-slate-800 dark:text-slate-100">
               <span className="px-2 py-0.5 rounded bg-slate-100 dark:bg-[#121215] border border-slate-300 dark:border-[#3a3a42] font-extrabold text-slate-900 dark:text-white tabular-nums">
                 {isPptxDoc ? `Slide ${currentPage}` : currentPage}
               </span>
@@ -1297,8 +1392,112 @@ export const DocumentModalViewer: React.FC<Props> = ({
             </div>
           )}
 
-
         </main>
+
+        {/* Thumb-Zone Mobile Bottom Study Bar */}
+        <nav
+          aria-label="Mobile study controls"
+          className="sm:hidden fixed bottom-0 inset-x-0 z-30 bg-[#18181c]/95 backdrop-blur-md border-t border-[#33333d] px-1.5 pt-1 pb-safe flex items-center justify-around gap-1 text-[10px] font-semibold text-slate-300 shadow-2xl"
+        >
+          {isGoogleDriveDoc && driveEmbedUrl && activeSections.length > 0 ? (
+            <button
+              type="button"
+              onClick={() => setDriveViewMode(prev => (prev === "embed" ? "notes" : "embed"))}
+              className="flex-1 min-h-[46px] flex flex-col items-center justify-center gap-0.5 rounded-xl text-amber-400 hover:bg-white/5 cursor-pointer px-1"
+            >
+              <FileText className="w-4 h-4" />
+              <span className="truncate max-w-[74px]">{driveViewMode === "embed" ? "Study Notes" : "Slide File"}</span>
+            </button>
+          ) : (
+            <div className="flex items-center gap-0.5 shrink-0">
+              <button
+                type="button"
+                onClick={() => handlePageChange(currentPage - 1)}
+                disabled={currentPage <= 1}
+                className="min-w-[40px] min-h-[44px] flex items-center justify-center rounded-xl text-slate-200 disabled:opacity-30 hover:bg-white/10 cursor-pointer"
+                aria-label="Previous page"
+              >
+                <ChevronLeft className="w-4 h-4" />
+              </button>
+              <button
+                type="button"
+                onClick={() => setShowThumbnails(true)}
+                className="min-h-[44px] px-2 flex flex-col items-center justify-center rounded-xl text-amber-400 hover:bg-white/5 cursor-pointer tabular-nums"
+                aria-label="Open pages and bookmarks"
+              >
+                <span className="text-xs font-mono font-bold leading-tight">{currentPage}/{totalPages}</span>
+                <span className="text-[9px] text-slate-400">Pages</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => handlePageChange(currentPage + 1)}
+                disabled={currentPage >= totalPages}
+                className="min-w-[40px] min-h-[44px] flex items-center justify-center rounded-xl text-slate-200 disabled:opacity-30 hover:bg-white/10 cursor-pointer"
+                aria-label="Next page"
+              >
+                <ChevronRight className="w-4 h-4" />
+              </button>
+            </div>
+          )}
+
+          {(!isGoogleDriveDoc || driveViewMode === "notes") && (
+            <button
+              type="button"
+              onClick={cycleFontSize}
+              className="min-w-[48px] min-h-[46px] flex flex-col items-center justify-center gap-0.5 rounded-xl text-slate-200 hover:bg-white/5 cursor-pointer px-1.5"
+              title="Cycle text size"
+            >
+              <span className="text-xs font-extrabold text-amber-400 leading-none">A+</span>
+              <span className="capitalize">{localFontSize === "xlarge" ? "XL" : localFontSize}</span>
+            </button>
+          )}
+
+          {(!isGoogleDriveDoc || driveViewMode === "notes") && (
+            <button
+              type="button"
+              onClick={toggleSlideDeckTheme}
+              className="min-w-[46px] min-h-[46px] flex flex-col items-center justify-center gap-0.5 rounded-xl text-slate-200 hover:bg-white/5 cursor-pointer px-1"
+              title="Toggle light or dark page background"
+            >
+              {slideDeckTheme === "dark" ? <Sun className="w-4 h-4 text-amber-400" /> : <Moon className="w-4 h-4 text-amber-400" />}
+              <span>{slideDeckTheme === "dark" ? "Light" : "Dark"}</span>
+            </button>
+          )}
+
+          <button
+            type="button"
+            onClick={() => setShowTtsPlayer(prev => !prev)}
+            className={`min-w-[48px] min-h-[46px] flex flex-col items-center justify-center gap-0.5 rounded-xl cursor-pointer px-1.5 ${
+              showTtsPlayer ? "bg-amber-500/20 text-amber-400" : "text-slate-200 hover:bg-white/5"
+            }`}
+          >
+            <Volume2 className="w-4 h-4" />
+            <span>Listen</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => {
+              if (onOpenQuiz) onOpenQuiz(activeDoc?.id);
+              else setShowQuizModal(true);
+            }}
+            className="min-w-[48px] min-h-[46px] flex flex-col items-center justify-center gap-0.5 rounded-xl text-slate-200 hover:bg-white/5 cursor-pointer px-1.5"
+          >
+            <HelpCircle className="w-4 h-4 text-amber-400" />
+            <span>Quiz</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={handleToggleAiPanel}
+            className={`min-w-[54px] min-h-[46px] flex flex-col items-center justify-center gap-0.5 rounded-xl cursor-pointer px-2 font-bold ${
+              effectiveAiChatOpen ? "bg-amber-500 text-slate-950" : "bg-amber-500/15 text-amber-400 hover:bg-amber-500/25"
+            }`}
+          >
+            <Sparkles className="w-4 h-4" />
+            <span>Ask AI</span>
+          </button>
+        </nav>
 
         {/* Right Side Panel: AI AWS Tutor (Slide-in on Mobile, True Side-by-Side Docked Panel on Tablet & Desktop) */}
         <>
@@ -1492,6 +1691,7 @@ interface PresentationSlideCardProps {
   copiedCodeKey: string | null;
   handleCopyCode: (code: string, key: string) => void;
   isDarkMode?: boolean;
+  fontSize?: ReaderFontSize;
   slideImageUrl?: string;
 }
 
@@ -1506,6 +1706,7 @@ const PresentationSlideCard: React.FC<PresentationSlideCardProps> = ({
   copiedCodeKey,
   handleCopyCode,
   isDarkMode = true,
+  fontSize = "medium",
   slideImageUrl
 }) => {
   const visualSlideUrl = slideImageUrl || sec.slideImageUrl;
@@ -1515,7 +1716,7 @@ const PresentationSlideCard: React.FC<PresentationSlideCardProps> = ({
     return (
       <div
         id={`doc-page-${pageNum}`}
-        className="w-full sm:w-[1020px] max-w-full sm:max-w-[96vw] bg-white dark:bg-[#181a20] text-slate-900 dark:text-white shadow-2xl border border-slate-200 dark:border-slate-800 rounded-2xl overflow-hidden relative font-sans transition-all scroll-mt-6 mb-8 flex flex-col group"
+        className="w-full sm:w-[1020px] max-w-full sm:max-w-[96vw] bg-white dark:bg-[#181a20] text-slate-900 dark:text-white shadow-2xl border border-slate-200 dark:border-slate-800 rounded-2xl overflow-hidden relative font-sans transition-all scroll-mt-6 mb-4 sm:mb-8 flex flex-col group"
       >
         {/* Top Header Row with Slide Details */}
         <div className="bg-slate-50 dark:bg-[#1e222b] border-b border-slate-200 dark:border-slate-800 px-4 sm:px-6 py-2.5 flex items-center justify-between text-xs text-slate-700 dark:text-slate-300">
@@ -1533,7 +1734,7 @@ const PresentationSlideCard: React.FC<PresentationSlideCardProps> = ({
           <div className="flex items-center gap-2">
             <button
               onClick={onToggleBookmark}
-              className="p-1.5 px-2.5 rounded-lg bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 hover:text-amber-600 dark:hover:text-amber-400 border border-slate-200 dark:border-slate-700 transition-colors flex items-center gap-1.5 text-xs font-medium cursor-pointer shadow-xs"
+              className="min-h-[38px] p-1.5 px-2.5 rounded-lg bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 hover:text-amber-600 dark:hover:text-amber-400 border border-slate-200 dark:border-slate-700 transition-colors flex items-center gap-1.5 text-xs font-medium cursor-pointer shadow-xs"
               title={isBookmarked ? "Remove bookmark" : "Bookmark this slide"}
             >
               <Bookmark className={`w-3.5 h-3.5 ${isBookmarked ? "text-amber-500 fill-amber-500" : ""}`} />
@@ -1554,7 +1755,7 @@ const PresentationSlideCard: React.FC<PresentationSlideCardProps> = ({
 
         {/* PowerPoint Speaker Notes Section */}
         {sec.speakerNotes && (
-          <div className="px-4 sm:px-6 py-3 bg-amber-500/5 dark:bg-amber-400/5 border-t border-slate-200 dark:border-slate-800 text-xs">
+          <div className="px-4 sm:px-6 py-3 bg-amber-500/5 dark:bg-amber-400/5 border-t border-slate-200 dark:border-slate-800 text-sm sm:text-xs">
             <div className="flex items-center gap-1.5 font-bold text-amber-600 dark:text-amber-400 text-[11px] uppercase tracking-wider mb-1.5">
               <MessageSquareQuote className="w-3.5 h-3.5" /> Slide {pageNum} Notes
             </div>
@@ -1565,9 +1766,9 @@ const PresentationSlideCard: React.FC<PresentationSlideCardProps> = ({
         )}
 
         {/* Bottom Bar */}
-        <div className="px-4 sm:px-6 py-2 border-t border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-[#161a23] flex items-center justify-between text-[11px] text-slate-500 dark:text-slate-400 font-mono">
+        <div className="px-4 sm:px-6 py-2 border-t border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-[#161a23] flex items-center justify-between text-[11px] text-slate-500 dark:text-slate-400 font-mono tabular-nums">
           <span className="truncate pr-2">{docTitle || `Slide ${pageNum}`}</span>
-          <span>PowerPoint Slide {pageNum} of ${totalPages}</span>
+          <span>Slide {pageNum} of {totalPages}</span>
         </div>
       </div>
     );
@@ -1579,7 +1780,7 @@ const PresentationSlideCard: React.FC<PresentationSlideCardProps> = ({
     return (
       <div
         id={`doc-page-${pageNum}`}
-        className="w-full sm:w-[840px] max-w-full sm:max-w-[95vw] min-h-[460px] sm:min-h-[640px] bg-[#1a2332] text-white shadow-2xl border border-slate-700/80 rounded-2xl p-4 sm:p-8 md:p-12 relative overflow-hidden font-sans leading-relaxed transition-all scroll-mt-6 flex flex-col justify-between"
+        className="w-full sm:w-[840px] max-w-full sm:max-w-[95vw] min-h-[360px] sm:min-h-[600px] bg-[#1a2332] text-white shadow-2xl border border-slate-700/80 rounded-2xl p-4 sm:p-8 md:p-12 relative overflow-hidden font-sans leading-relaxed transition-all scroll-mt-6 flex flex-col justify-between"
       >
         {/* Background Decorative Graphic Curve */}
         <div className="absolute -top-16 -right-16 w-80 h-80 rounded-full bg-[#222f42] opacity-60 pointer-events-none blur-md" />
@@ -1587,14 +1788,14 @@ const PresentationSlideCard: React.FC<PresentationSlideCardProps> = ({
 
         <div className="relative z-10">
           {/* Top Header Row */}
-          <div className="flex items-center justify-between mb-6 sm:mb-8">
+          <div className="flex items-center justify-between mb-5 sm:mb-8">
             <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl sm:rounded-2xl bg-[#232f42] border border-[#34445d] flex items-center justify-center shadow-md shrink-0">
               <Layers className="w-5 h-5 sm:w-6 sm:h-6 text-amber-400" />
             </div>
             <div className="flex items-center gap-3 shrink-0">
               <button
                 onClick={onToggleBookmark}
-                className="p-2 rounded-xl bg-[#232f42] hover:bg-[#2e3e57] text-slate-300 hover:text-amber-400 transition-colors flex items-center gap-1.5 text-xs font-medium cursor-pointer shadow-xs min-h-[36px]"
+                className="p-2 rounded-xl bg-[#232f42] hover:bg-[#2e3e57] text-slate-300 hover:text-amber-400 transition-colors flex items-center gap-1.5 text-xs font-medium cursor-pointer shadow-xs min-h-[40px]"
                 title={isBookmarked ? "Remove bookmark" : "Bookmark this page"}
               >
                 <Bookmark className={`w-4 h-4 ${isBookmarked ? "text-amber-400 fill-amber-400" : ""}`} />
@@ -1605,7 +1806,7 @@ const PresentationSlideCard: React.FC<PresentationSlideCardProps> = ({
 
           {/* Category Eyebrow */}
           <div className="text-amber-400 font-bold uppercase tracking-widest text-[11px] sm:text-xs mb-2 sm:mb-3">
-            {sec.subtitle || shortTitle || "PRESENTATION DECK"}
+            {sec.subtitle || shortTitle || "STUDY NOTES"}
           </div>
 
           {/* Title */}
@@ -1614,14 +1815,14 @@ const PresentationSlideCard: React.FC<PresentationSlideCardProps> = ({
           </h1>
 
           {/* Description Content */}
-          <div className="text-slate-300 text-xs sm:text-sm md:text-base leading-relaxed mb-6 sm:mb-8 max-w-3xl font-normal">
-            <PaperMarkdownRenderer content={sec.contentMarkdown} isDark={true} />
+          <div className="text-slate-200 leading-relaxed mb-6 sm:mb-8 max-w-3xl font-normal">
+            <PaperMarkdownRenderer content={sec.contentMarkdown} isDark={true} fontSize={fontSize} />
           </div>
         </div>
 
         {/* Footer */}
-        <div className="pt-3 sm:pt-4 border-t border-[#2d3a50] flex items-center justify-between text-xs text-slate-400 font-mono relative z-10 mt-4">
-          <span className="truncate pr-2">{docTitle || "Slide 1"}</span>
+        <div className="pt-3 sm:pt-4 border-t border-[#2d3a50] flex items-center justify-between text-xs text-slate-400 font-mono relative z-10 mt-4 tabular-nums">
+          <span className="truncate pr-2">{docTitle || "Page 1"}</span>
           <span>1 / {totalPages}</span>
         </div>
       </div>
@@ -1632,7 +1833,7 @@ const PresentationSlideCard: React.FC<PresentationSlideCardProps> = ({
   return (
     <div
       id={`doc-page-${pageNum}`}
-      className={`w-full sm:w-[840px] max-w-full sm:max-w-[95vw] min-h-[460px] sm:min-h-[640px] ${
+      className={`w-full sm:w-[840px] max-w-full sm:max-w-[95vw] min-h-[360px] sm:min-h-[600px] ${
         isDarkMode
           ? "bg-[#0b1329] text-slate-100 border-[#1e293b] shadow-black/80"
           : "bg-[#f8fafc] text-slate-900 border-slate-200 shadow-slate-300/40"
@@ -1642,15 +1843,15 @@ const PresentationSlideCard: React.FC<PresentationSlideCardProps> = ({
         {/* Top Eyebrow & Bookmark */}
         <div className="flex items-center justify-between mb-3">
           <div className={`${isDarkMode ? "text-amber-400" : "text-amber-600"} font-bold uppercase tracking-widest text-[11px] sm:text-xs`}>
-            {sec.subtitle || `SLIDE ${pageNum} OF ${totalPages}`}
+            {sec.subtitle || `PAGE ${pageNum} OF ${totalPages}`}
           </div>
           <button
             onClick={onToggleBookmark}
-            className={`p-1.5 sm:p-2 rounded-lg ${
+            className={`p-2 rounded-lg ${
               isDarkMode
                 ? "bg-slate-800/90 hover:bg-slate-700 text-slate-300 hover:text-amber-400"
                 : "bg-slate-200/80 hover:bg-slate-300 text-slate-600 hover:text-amber-600"
-            } transition-colors flex items-center gap-1.5 text-xs font-medium cursor-pointer min-h-[36px]`}
+            } transition-colors flex items-center gap-1.5 text-xs font-medium cursor-pointer min-h-[40px]`}
             title={isBookmarked ? "Remove bookmark" : "Bookmark this page"}
           >
             <Bookmark className={`w-4 h-4 ${isBookmarked ? (isDarkMode ? "text-amber-400 fill-amber-400" : "text-amber-500 fill-amber-500") : ""}`} />
@@ -1664,8 +1865,8 @@ const PresentationSlideCard: React.FC<PresentationSlideCardProps> = ({
         </h1>
 
         {/* Content Markdown */}
-        <div className="space-y-4 font-normal text-sm sm:text-base">
-          <PaperMarkdownRenderer content={sec.contentMarkdown} isDark={isDarkMode} />
+        <div className="space-y-4 font-normal">
+          <PaperMarkdownRenderer content={sec.contentMarkdown} isDark={isDarkMode} fontSize={fontSize} />
         </div>
 
         {/* Callout Boxes */}
